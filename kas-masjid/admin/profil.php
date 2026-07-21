@@ -88,11 +88,15 @@ $alert = getAlert();
     </div>
     <?php endif; ?>
 
-    <div class="page-header">
-      <h1 class="page-title"><i class="fas fa-user-cog"></i> Profil Admin</h1>
-      <p class="page-subtitle">Kelola informasi akun dan keamanan password</p>
-    </div>
-
+    <div class="page-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+  <div>
+    <h1 class="page-title"><i class="fas fa-user-cog"></i> Profil Admin</h1>
+    <p class="page-subtitle">Kelola informasi akun dan keamanan password</p>
+  </div>
+  <a href="javascript:history.back()" class="btn btn-ghost" style="border: 1.5px solid var(--border); background: var(--bg-card);">
+    <i class="fas fa-arrow-left"></i> Kembali
+  </a>
+</div>
     <div class="grid-2" style="align-items:start;gap:24px">
 
       <!-- Profil Card -->

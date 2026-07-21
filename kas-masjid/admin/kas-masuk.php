@@ -30,11 +30,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect(APP_URL . '/admin/kas-masuk.php');
 }
 
-// ---- Handle DELETE ----
+// ---- Handle DELETE & TRASH ----
 if (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
-    $conn->query("DELETE FROM transaksi WHERE id=$id AND jenis='masuk'");
-    setAlert('success', 'Data kas masuk berhasil dihapus.');
+    $type = $_GET['type'] ?? 'soft';
+    
+    if ($type === 'hard') {
+        $conn->query("DELETE FROM transaksi WHERE id=$id AND jenis='masuk'");
+        setAlert('success', 'Data berhasil dihapus permanen.');
+    } else {
+        // Pindahkan ke tabel sampah
+        $stmt = $conn->prepare("INSERT INTO transaksi_sampah (old_id, tanggal, keterangan, jumlah, jenis, kategori_id, user_id) SELECT id, tanggal, keterangan, jumlah, jenis, kategori_id, user_id FROM transaksi WHERE id = ? AND jenis='masuk'");
+        $stmt->bind_param('i', $id);
+        if ($stmt->execute()) {
+            $conn->query("DELETE FROM transaksi WHERE id=$id");
+            setAlert('success', 'Data berhasil dipindahkan ke Tempat Sampah.');
+        }
+    }
     redirect(APP_URL . '/admin/kas-masuk.php');
 }
 
@@ -55,6 +67,7 @@ $per_page = 12;
 
 $where = "t.jenis='masuk' AND DATE_FORMAT(t.tanggal,'%Y-%m')='$filter_bulan'";
 $where_simple = "jenis='masuk' AND DATE_FORMAT(tanggal,'%Y-%m')='$filter_bulan'";
+
 $total_rows  = $conn->query("SELECT COUNT(*) as c FROM transaksi WHERE $where_simple")->fetch_assoc()['c'];
 $total_pages = max(1, ceil($total_rows / $per_page));
 $offset      = ($page - 1) * $per_page;
@@ -64,19 +77,19 @@ $summary = $conn->query("SELECT COALESCE(SUM(jumlah),0) as total, COUNT(*) as cn
 
 $alert = getAlert();
 ?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Kas Masuk – <?= APP_NAME ?></title>
+<title>Kas Masuk - <?= APP_NAME ?></title>
 <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
 <div class="admin-wrapper">
 <?php include '../includes/partials/sidebar-admin.php'; ?>
-
 <div class="admin-main">
   <div class="topbar">
     <div class="topbar-left">
@@ -99,10 +112,15 @@ $alert = getAlert();
       <?= htmlspecialchars($alert['message']) ?>
     </div>
     <?php endif; ?>
-
-    <div class="page-header">
-      <h1 class="page-title"><i class="fas fa-arrow-circle-down" style="color:var(--success)"></i> Kas Masuk</h1>
-      <p class="page-subtitle">Kelola data pemasukan kas <?= MASJID_NAME ?></p>
+    
+    <div class="page-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+      <div>
+        <h1 class="page-title"><i class="fas fa-arrow-circle-down" style="color:var(--success)"></i> Kas Masuk</h1>
+        <p class="page-subtitle">Kelola data pemasukan kas <?= MASJID_NAME ?></p>
+      </div>
+      <a href="javascript:history.back()" class="btn btn-ghost" style="border: 1.5px solid var(--border); background: var(--bg-card);">
+        <i class="fas fa-arrow-left"></i> Kembali
+      </a>
     </div>
 
     <!-- Form Tambah/Edit -->
@@ -189,6 +207,7 @@ $alert = getAlert();
           <div style="font-weight:800;color:var(--info)"><?= $summary['cnt'] ?> transaksi</div></div>
         </div>
       </div>
+      
       <form method="GET" style="display:flex;align-items:center;gap:10px">
         <label style="font-size:.85rem;font-weight:600;color:var(--text-secondary)"><i class="fas fa-filter"></i> Bulan:</label>
         <input type="month" name="bulan" value="<?= $filter_bulan ?>" class="form-control" style="width:160px" onchange="this.form.submit()">
@@ -202,7 +221,7 @@ $alert = getAlert();
           <tr><th>#</th><th>Tanggal</th><th>Keterangan</th><th>Kategori</th><th class="text-right">Jumlah (Rp)</th><th style="width:90px">Aksi</th></tr>
         </thead>
         <tbody>
-          <?php if ($rows->num_rows):
+          <?php if ($rows->num_rows): 
             $no = $offset + 1;
             while ($r = $rows->fetch_assoc()): ?>
           <tr>
@@ -214,14 +233,14 @@ $alert = getAlert();
             <td>
               <div style="display:flex;gap:6px">
                 <a href="?edit=<?= $r['id'] ?>" class="btn btn-ghost btn-icon btn-sm" data-tooltip="Edit"><i class="fas fa-edit"></i></a>
-                <button onclick="confirmDelete(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['keterangan'])) ?>')"
+                <button onclick="confirmDelete(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['keterangan'])) ?>')" 
                         class="btn btn-icon btn-sm" style="background:rgba(239,68,68,.1);color:var(--danger)" data-tooltip="Hapus">
                   <i class="fas fa-trash"></i>
                 </button>
               </div>
             </td>
           </tr>
-          <?php endwhile;
+          <?php endwhile; 
           else: ?>
           <tr><td colspan="6"><div class="empty-state"><div class="es-icon"><i class="fas fa-inbox"></i></div><h3>Belum ada data kas masuk</h3><p>Tambahkan data menggunakan form di atas</p></div></td></tr>
           <?php endif; ?>
@@ -253,7 +272,7 @@ $alert = getAlert();
 </div>
 </div>
 
-<!-- Confirm Delete Modal -->
+<!-- Confirm Delete Modal (Dengan Opsi Tempat Sampah) -->
 <div class="modal-overlay" id="deleteModal">
   <div class="modal">
     <div class="modal-header">
@@ -263,11 +282,14 @@ $alert = getAlert();
     <div class="modal-body">
       <p>Apakah Anda yakin ingin menghapus data:</p>
       <div style="background:var(--bg-main);padding:14px;border-radius:var(--radius-sm);margin-top:10px;font-weight:600" id="deleteItemName"></div>
-      <p style="color:var(--danger);font-size:.875rem;margin-top:12px"><i class="fas fa-warning"></i> Data yang dihapus tidak dapat dikembalikan.</p>
+      <p style="color:var(--danger);font-size:.875rem;margin-top:12px"><i class="fas fa-info-circle"></i> Silakan pilih metode penghapusan di bawah ini.</p>
     </div>
-    <div class="modal-footer">
+    <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
       <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
-      <a id="deleteConfirmBtn" class="btn btn-danger"><i class="fas fa-trash"></i> Ya, Hapus</a>
+      <div style="display:flex; gap:8px;">
+        <a id="deleteSoftBtn" class="btn btn-warning" style="background:var(--warning); color:#fff;"><i class="fas fa-archive"></i> Pindah ke Sampah</a>
+        <a id="deleteHardBtn" class="btn btn-danger"><i class="fas fa-trash"></i> Hapus Permanen</a>
+      </div>
     </div>
   </div>
 </div>
@@ -279,19 +301,38 @@ document.getElementById('jumlahInput').addEventListener('input', function() {
   this.value = val ? new Intl.NumberFormat('id-ID').format(val) : '';
 });
 
+// Modal Logic
 function confirmDelete(id, name) {
   document.getElementById('deleteItemName').textContent = name;
-  document.getElementById('deleteConfirmBtn').href = '?delete=' + id;
+  document.getElementById('deleteSoftBtn').href = '?delete=' + id + '&type=soft';
+  document.getElementById('deleteHardBtn').href = '?delete=' + id + '&type=hard';
   document.getElementById('deleteModal').classList.add('active');
 }
-function closeModal() { document.getElementById('deleteModal').classList.remove('active'); }
-document.getElementById('deleteModal').addEventListener('click', function(e){ if(e.target===this) closeModal(); });
+
+function closeModal() {
+  document.getElementById('deleteModal').classList.remove('active');
+}
+document.getElementById('deleteModal').addEventListener('click', function(e){
+  if(e.target===this) closeModal();
+});
 
 // Sidebar toggle
 const sidebar = document.getElementById('adminSidebar');
 const overlay = document.getElementById('sidebarOverlay');
-document.getElementById('sidebarToggle').addEventListener('click',()=>{ sidebar.classList.toggle('open'); overlay.classList.toggle('active'); });
-overlay.addEventListener('click',()=>{ sidebar.classList.remove('open'); overlay.classList.remove('active'); });
+
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+  if (window.innerWidth <= 768) {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('active');
+  } else {
+    document.querySelector('.admin-wrapper').classList.toggle('toggled');
+  }
+});
+
+overlay.addEventListener('click',()=>{
+  sidebar.classList.remove('open');
+  overlay.classList.remove('active');
+});
 </script>
 </body>
 </html>

@@ -89,10 +89,15 @@ $alert = getAlert();
     </div>
     <?php endif; ?>
 
-    <div class="page-header">
-      <h1 class="page-title"><i class="fas fa-tags"></i> Kelola Kategori</h1>
-      <p class="page-subtitle">Atur kategori pemasukan dan pengeluaran kas masjid</p>
-    </div>
+    <div class="page-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+  <div>
+    <h1 class="page-title"><i class="fas fa-tags"></i> Kelola Kategori</h1>
+    <p class="page-subtitle">Atur kategori pemasukan dan pengeluaran kas masjid</p>
+  </div>
+  <a href="javascript:history.back()" class="btn btn-ghost" style="border: 1.5px solid var(--border); background: var(--bg-card);">
+    <i class="fas fa-arrow-left"></i> Kembali
+  </a>
+</div>
 
     <div class="grid-2" style="align-items:start">
 

@@ -384,3 +384,13 @@ input,select,textarea{font-family:inherit;outline:none}
 .shadow{box-shadow:var(--shadow)}
 .shadow-lg{box-shadow:var(--shadow-lg)}
 .overflow-hidden{overflow:hidden}
+
+/* --- Efek Tutup/Buka Sidebar di Layar Laptop (Desktop) --- */
+@media (min-width: 769px) {
+    .admin-wrapper.toggled .sidebar {
+        transform: translateX(-100%);
+    }
+    .admin-wrapper.toggled .admin-main {
+        margin-left: 0;
+    }
+}

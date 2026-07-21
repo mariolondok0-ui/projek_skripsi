@@ -24,10 +24,14 @@ $admin_init  = strtoupper(substr($admin_name, 0, 1));
     <a href="<?= APP_URL ?>/admin/laporan.php" class="nav-item <?= $current=='laporan.php'?'active':'' ?>">
       <span class="nav-icon"><i class="fas fa-file-invoice-dollar"></i></span>Laporan
     </a>
-    <div class="nav-section-label">Pengaturan</div>
-    <a href="<?= APP_URL ?>/admin/kategori.php" class="nav-item <?= $current=='kategori.php'?'active':'' ?>">
-      <span class="nav-icon"><i class="fas fa-tags"></i></span>Kategori
-    </a>
+   <!-- Cukup tambahkan baris kode Tempat Sampah ini -->
+<div class="nav-section-label">Pengaturan</div>
+<a href="<?= APP_URL ?>/admin/kategori.php" class="nav-item <?= $current=='kategori.php'?'active':'' ?>">
+  <span class="nav-icon"><i class="fas fa-tags"></i></span>Kategori
+</a>
+<a href="<?= APP_URL ?>/admin/tempat-sampah.php" class="nav-item <?= $current=='tempat-sampah.php'?'active':'' ?>">
+  <span class="nav-icon"><i class="fas fa-trash-alt"></i></span>Tempat Sampah
+</a>
     <a href="<?= APP_URL ?>/admin/profil.php" class="nav-item <?= $current=='profil.php'?'active':'' ?>">
       <span class="nav-icon"><i class="fas fa-user-cog"></i></span>Profil
     </a>
