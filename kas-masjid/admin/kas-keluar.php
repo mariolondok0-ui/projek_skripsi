@@ -50,13 +50,14 @@ $filter_bulan  = sanitize($_GET['bulan'] ?? date('Y-m'));
 $page = max(1, (int)($_GET['page'] ?? 1));
 $per_page = 12;
 
-$where = "jenis='keluar' AND DATE_FORMAT(tanggal,'%Y-%m')='$filter_bulan'";
-$total_rows  = $conn->query("SELECT COUNT(*) as c FROM transaksi WHERE $where")->fetch_assoc()['c'];
+$where = "t.jenis='keluar' AND DATE_FORMAT(t.tanggal,'%Y-%m')='$filter_bulan'";
+$where_simple = "jenis='keluar' AND DATE_FORMAT(tanggal,'%Y-%m')='$filter_bulan'";
+$total_rows  = $conn->query("SELECT COUNT(*) as c FROM transaksi WHERE $where_simple")->fetch_assoc()['c'];
 $total_pages = max(1, ceil($total_rows / $per_page));
 $offset      = ($page - 1) * $per_page;
 
 $rows    = $conn->query("SELECT t.*, k.nama_kategori FROM transaksi t JOIN kategori k ON t.kategori_id=k.id WHERE $where ORDER BY t.tanggal DESC, t.id DESC LIMIT $per_page OFFSET $offset");
-$summary = $conn->query("SELECT COALESCE(SUM(jumlah),0) as total, COUNT(*) as cnt FROM transaksi WHERE $where")->fetch_assoc();
+$summary = $conn->query("SELECT COALESCE(SUM(jumlah),0) as total, COUNT(*) as cnt FROM transaksi WHERE $where_simple")->fetch_assoc();
 
 $alert = getAlert();
 ?>

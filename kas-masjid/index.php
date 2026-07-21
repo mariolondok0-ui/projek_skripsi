@@ -72,8 +72,24 @@ for($i=5;$i>=0;$i--){
         </div>
       </div>
       <div class="card animate-fadeIn delay-3">
-        <div class="card-header"><div class="card-title"><i class="fas fa-chart-line"></i> Tren 6 Bulan</div></div>
-        <div class="card-body"><div class="chart-container"><canvas id="miniChart"></canvas></div></div>
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-chart-line"></i> Tren 6 Bulan</div>
+          <a href="grafik-publik.php" class="btn btn-ghost btn-sm"><i class="fas fa-expand-alt"></i> Lengkap</a>
+        </div>
+        <div class="card-body">
+          <div class="chart-container"><canvas id="miniChart"></canvas></div>
+          <div style="display:flex;justify-content:center;gap:20px;margin-top:12px">
+            <div style="display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--text-muted)">
+              <span style="width:12px;height:12px;border-radius:3px;background:rgba(26,122,74,.85);display:inline-block"></span>Pemasukan
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--text-muted)">
+              <span style="width:12px;height:12px;border-radius:3px;background:rgba(239,68,68,.7);display:inline-block"></span>Pengeluaran
+            </div>
+          </div>
+        </div>
+        <div class="card-footer" style="text-align:center">
+          <a href="grafik-publik.php" style="font-size:.8rem;color:var(--primary);font-weight:600"><i class="fas fa-chart-bar"></i> Lihat Grafik Lengkap dengan 4 Jenis Grafik →</a>
+        </div>
       </div>
     </div>
   </div>
