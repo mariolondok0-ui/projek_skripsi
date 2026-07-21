@@ -6,11 +6,7 @@ $total_masuk  = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM tr
 $total_keluar = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='keluar'")->fetch_assoc()['t'];
 $saldo        = $total_masuk - $total_keluar;
 $total_trx    = (int)$conn->query("SELECT COUNT(*) as t FROM transaksi")->fetch_assoc()['t'];
-$bln          = date('Y-m');
 $tahun        = (int)date('Y');
-$masuk_bln    = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='masuk'  AND DATE_FORMAT(tanggal,'%Y-%m')='$bln'")->fetch_assoc()['t'];
-$keluar_bln   = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='keluar' AND DATE_FORMAT(tanggal,'%Y-%m')='$bln'")->fetch_assoc()['t'];
-$total_trx_bln= (int)$conn->query("SELECT COUNT(*) as t FROM transaksi WHERE DATE_FORMAT(tanggal,'%Y-%m')='$bln'")->fetch_assoc()['t'];
 
 // Data grafik 6 bulan terakhir (bar)
 $chart_labels = $chart_masuk = $chart_keluar = [];
@@ -44,19 +40,18 @@ $pel = $ped = [];
 while ($r = $pe->fetch_assoc()) { $pel[] = $r['nama_kategori']; $ped[] = (float)$r['total']; }
 
 // Transaksi terbaru
-$trx_terbaru = $conn->query("SELECT t.*, k.nama_kategori FROM transaksi t JOIN kategori k ON t.kategori_id=k.id ORDER BY t.tanggal DESC, t.id DESC LIMIT 6");
+$trx_terbaru = $conn->query("SELECT t.*, k.nama_kategori FROM transaksi t JOIN kategori k ON t.kategori_id=k.id ORDER BY t.tanggal DESC, t.id DESC LIMIT 8");
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Beranda – <?= APP_NAME ?></title>
+<title>Transparansi Keuangan - <?= APP_NAME ?></title>
 <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-/* Slideshow */
 .grafik-slide { display:none; animation:slideInChart .55s cubic-bezier(.4,0,.2,1); }
 .grafik-slide.active { display:block; }
 @keyframes slideInChart {
@@ -75,98 +70,73 @@ $trx_terbaru = $conn->query("SELECT t.*, k.nama_kategori FROM transaksi t JOIN k
 </style>
 </head>
 <body>
-<?php include 'includes/partials/navbar-publik.php'; ?>
 
-<!-- ===== HERO ===== -->
-<section class="hero">
-  <div class="container hero-content">
-    <div class="hero-badge"><i class="fas fa-mosque"></i> <?= MASJID_NAME ?></div>
-    <h1>Transparansi Keuangan<br><span>Kas Masjid</span> untuk Jamaah</h1>
-    <p>Pantau pemasukan, pengeluaran, dan saldo kas masjid secara real-time. Informasi terbuka dan dapat diakses oleh seluruh jamaah kapan saja.</p>
-    <div class="hero-actions">
-      <a href="laporan-publik.php" class="btn btn-secondary btn-lg"><i class="fas fa-file-alt"></i> Lihat Laporan</a>
-      <a href="#grafik-section" class="btn btn-lg" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4)"><i class="fas fa-chart-bar"></i> Lihat Grafik</a>
+<!-- ===== NAVBAR PUBLIK ===== -->
+<nav class="pub-navbar" id="pubNavbar">
+  <div class="container" style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+    <div class="nav-brand" style="display:flex; align-items:center; gap:12px;">
+      <div class="brand-icon"><i class="fas fa-mosque"></i></div>
+      <div>
+        <div style="font-size:.7rem;opacity:.7;font-weight:400;text-transform:uppercase;letter-spacing:.5px;">Sistem Informasi</div>
+        <div style="font-size:1rem;font-weight:700;"><?= MASJID_NAME ?></div>
+      </div>
     </div>
-    <div class="hero-stats">
-      <div class="hero-stat"><div class="hs-val" id="heroMasuk">Rp 0</div><div class="hs-label">Total Pemasukan</div></div>
-      <div class="hero-divider"></div>
-      <div class="hero-stat"><div class="hs-val" id="heroKeluar">Rp 0</div><div class="hs-label">Total Pengeluaran</div></div>
-      <div class="hero-divider"></div>
-      <div class="hero-stat"><div class="hs-val"><?= $total_trx ?></div><div class="hs-label">Total Transaksi</div></div>
+    <div class="nav-links" id="navLinks" style="margin-left:auto; display:flex; align-items:center;">
+      <a href="<?= APP_URL ?>/login.php" class="nav-login" style="display:inline-flex;align-items:center;gap:8px;">
+        <i class="fas fa-sign-in-alt"></i> Login Admin
+      </a>
     </div>
   </div>
-</section>
+</nav>
+<div class="pub-content"></div>
 
-<!-- ===== SALDO & STAT CARDS ===== -->
-<section class="section" style="padding-top:48px;padding-bottom:32px">
-  <div class="container">
-    <div class="grid-3" style="align-items:start">
+<!-- ===== HERO SECTION ===== -->
+<section class="hero" style="padding: 70px 0 80px 0;">
+  <div class="container hero-content" style="max-width: 1050px; text-align: left;">
+    <div class="hero-badge"><i class="fas fa-mosque"></i> <?= MASJID_NAME ?></div>
+    <h1 style="font-size: clamp(2rem, 4.5vw, 3.2rem); line-height: 1.25; margin-bottom: 20px;">
+      Transparansi Keuangan<br><span style="color: var(--secondary-light);">Kas Masjid</span> untuk Jamaah
+    </h1>
+    <p style="font-size: 1.05rem; line-height: 1.7; opacity: 0.85; max-width: 650px; margin-bottom: 35px;">
+      Pantau pemasukan, pengeluaran, dan saldo kas masjid secara real-time. Informasi terbuka, akurat, dan dapat diakses oleh seluruh jamaah kapan saja dengan mudah.
+    </p>
 
-      <!-- Saldo Card -->
-      <div class="saldo-card animate-fadeIn">
-        <div class="saldo-icon"><i class="fas fa-wallet"></i></div>
-        <div class="saldo-label">Saldo Kas Saat Ini</div>
-        <div class="saldo-amount"><?= formatRupiah($saldo) ?></div>
-        <div class="saldo-update"><i class="fas fa-sync-alt"></i> Diperbarui: <?= date('d M Y, H:i') ?></div>
-        <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-          <a href="laporan-publik.php" class="btn btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.35)"><i class="fas fa-file-alt"></i> Laporan</a>
-          <a href="#grafik-section" class="btn btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.35)"><i class="fas fa-chart-pie"></i> Grafik</a>
-        </div>
+    <!-- Statistik Singkat di Hero (Termasuk Total Saldo) -->
+    <div class="hero-stats" style="display: flex; gap: 24px; flex-wrap: wrap; background: rgba(255,255,255,0.08); padding: 24px 30px; border-radius: var(--radius-lg); border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(8px); align-items: center;">
+      <div class="hero-stat" style="flex: 1; min-width: 140px;">
+        <div class="hs-val" id="heroMasuk" style="font-size: 1.4rem; font-weight: 800; color: #fff;">Rp 0</div>
+        <div class="hs-label" style="font-size: 0.75rem; opacity: 0.75; margin-top: 2px;">Total Pemasukan</div>
       </div>
-
-      <!-- Stat Masuk/Keluar -->
-      <div style="display:flex;flex-direction:column;gap:16px">
-        <div class="stat-card green animate-fadeIn delay-1">
-          <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
-          <div class="stat-label">Pemasukan Bulan Ini</div>
-          <div class="stat-value"><?= formatRupiah($masuk_bln) ?></div>
-          <div class="stat-sub"><i class="fas fa-calendar up"></i> <?= date('F Y') ?></div>
-        </div>
-        <div class="stat-card red animate-fadeIn delay-2">
-          <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
-          <div class="stat-label">Pengeluaran Bulan Ini</div>
-          <div class="stat-value"><?= formatRupiah($keluar_bln) ?></div>
-          <div class="stat-sub"><i class="fas fa-calendar down"></i> <?= date('F Y') ?></div>
-        </div>
+      <div class="hero-divider" style="width: 1px; background: rgba(255,255,255,0.25); height: 35px;"></div>
+      <div class="hero-stat" style="flex: 1; min-width: 140px;">
+        <div class="hs-val" id="heroKeluar" style="font-size: 1.4rem; font-weight: 800; color: #fff;">Rp 0</div>
+        <div class="hs-label" style="font-size: 0.75rem; opacity: 0.75; margin-top: 2px;">Total Pengeluaran</div>
       </div>
-
-      <!-- Info Masjid -->
-      <div class="card animate-fadeIn delay-3" style="padding:28px">
-        <div style="text-align:center;margin-bottom:20px">
-          <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:#fff;margin:0 auto 14px;box-shadow:0 6px 20px rgba(26,122,74,.3)"><i class="fas fa-mosque"></i></div>
-          <h3 style="font-size:1rem;font-weight:800;color:var(--text-primary)"><?= MASJID_NAME ?></h3>
-          <p style="font-size:.78rem;color:var(--text-muted);margin-top:4px;line-height:1.6"><?= MASJID_ALAMAT ?></p>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div style="text-align:center;padding:12px;background:var(--bg-main);border-radius:var(--radius)">
-            <div style="font-size:1.3rem;font-weight:800;color:var(--primary)"><?= $total_trx ?></div>
-            <div style="font-size:.72rem;color:var(--text-muted)">Total Transaksi</div>
-          </div>
-          <div style="text-align:center;padding:12px;background:var(--bg-main);border-radius:var(--radius)">
-            <div style="font-size:1.3rem;font-weight:800;color:var(--secondary)"><?= $total_trx_bln ?></div>
-            <div style="font-size:.72rem;color:var(--text-muted)">Bulan Ini</div>
-          </div>
-        </div>
+      <div class="hero-divider" style="width: 1px; background: rgba(255,255,255,0.25); height: 35px;"></div>
+      <div class="hero-stat" style="flex: 1; min-width: 140px;">
+        <div class="hs-val" id="heroSaldo" style="font-size: 1.4rem; font-weight: 800; color: var(--secondary-light);">Rp 0</div>
+        <div class="hs-label" style="font-size: 0.75rem; opacity: 0.75; margin-top: 2px;">Total Saldo</div>
       </div>
-
+      <div class="hero-divider" style="width: 1px; background: rgba(255,255,255,0.25); height: 35px;"></div>
+      <div class="hero-stat" style="flex: 1; min-width: 100px;">
+        <div class="hs-val" style="font-size: 1.4rem; font-weight: 800; color: #fff;"><?= number_format($total_trx) ?></div>
+        <div class="hs-label" style="font-size: 0.75rem; opacity: 0.75; margin-top: 2px;">Total Transaksi</div>
+      </div>
     </div>
   </div>
 </section>
 
 <!-- ===== GRAFIK SLIDESHOW LENGKAP ===== -->
-<section class="section" id="grafik-section" style="padding-top:20px;padding-bottom:48px;background:linear-gradient(180deg,#f0f4f0,#e8f5ee)">
+<section class="section" id="grafik-section" style="padding-top:40px;padding-bottom:20px;background:linear-gradient(180deg,#f0f4f0,#e8f5ee)">
   <div class="container">
-    <div class="section-header">
+    <div class="section-header" style="margin-bottom: 32px;">
       <h2 class="section-title">Visualisasi <span>Data Keuangan</span></h2>
       <div class="section-divider"></div>
-      <p class="section-subtitle">Grafik interaktif keuangan kas masjid – berganti otomatis setiap 10 detik</p>
+      <p class="section-subtitle">Grafik interaktif keuangan kas masjid berganti otomatis setiap 10 detik</p>
     </div>
-
     <div class="card animate-fadeIn" style="padding:28px">
-
       <!-- Progress bar autoplay -->
       <div class="slide-progress-wrap"><div class="slide-progress-bar" id="slideProgress"></div></div>
-
       <!-- Slide Navigation Header -->
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
         <div>
@@ -184,17 +154,14 @@ $trx_terbaru = $conn->query("SELECT t.*, k.nama_kategori FROM transaksi t JOIN k
           </div>
         </div>
       </div>
-
       <!-- SLIDE 1: Bar Chart 6 Bulan -->
       <div class="grafik-slide active" id="slide-0">
         <div style="position:relative;height:320px"><canvas id="barChart"></canvas></div>
       </div>
-
       <!-- SLIDE 2: Line Chart Saldo Kumulatif -->
       <div class="grafik-slide" id="slide-1">
         <div style="position:relative;height:320px"><canvas id="lineChart"></canvas></div>
       </div>
-
       <!-- SLIDE 3: Pie Pemasukan -->
       <div class="grafik-slide" id="slide-2">
         <?php if (count($pid)): ?>
@@ -206,7 +173,6 @@ $trx_terbaru = $conn->query("SELECT t.*, k.nama_kategori FROM transaksi t JOIN k
         <div class="empty-state"><div class="es-icon"><i class="fas fa-chart-pie"></i></div><h3>Belum ada data pemasukan tahun <?= $tahun ?></h3></div>
         <?php endif; ?>
       </div>
-
       <!-- SLIDE 4: Pie Pengeluaran -->
       <div class="grafik-slide" id="slide-3">
         <?php if (count($ped)): ?>
@@ -218,7 +184,6 @@ $trx_terbaru = $conn->query("SELECT t.*, k.nama_kategori FROM transaksi t JOIN k
         <div class="empty-state"><div class="es-icon"><i class="fas fa-chart-pie"></i></div><h3>Belum ada data pengeluaran tahun <?= $tahun ?></h3></div>
         <?php endif; ?>
       </div>
-
       <!-- Dot Indicators -->
       <div style="display:flex;justify-content:center;gap:10px;margin-top:24px">
         <button class="slide-dot active" onclick="goToSlide(0)" title="Grafik 1"></button>
@@ -230,68 +195,51 @@ $trx_terbaru = $conn->query("SELECT t.*, k.nama_kategori FROM transaksi t JOIN k
   </div>
 </section>
 
-<!-- ===== TRANSAKSI TERBARU ===== -->
-<section class="section" style="padding-top:32px;padding-bottom:48px">
+<!-- ===== TABEL TRANSAKSI TERBARU ===== -->
+<section class="section" style="padding-top: 20px; padding-bottom: 60px;">
   <div class="container">
-    <div class="section-header">
-      <h2 class="section-title">Transaksi <span>Terbaru</span></h2>
+    <div class="section-header" style="margin-bottom: 32px;">
+      <h2 class="section-title">Riwayat <span>Transaksi Terbaru</span></h2>
       <div class="section-divider"></div>
-      <p class="section-subtitle">Catatan kas masjid terkini yang dapat diakses oleh seluruh jamaah</p>
+      <p class="section-subtitle">Daftar pencatatan arus kas masuk dan keluar masjid secara transparan</p>
     </div>
-    <div class="table-wrapper animate-fadeIn">
-      <table class="table table-striped">
+
+    <div class="table-wrapper animate-fadeIn" style="background: var(--bg-card); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow);">
+      <table class="table table-striped" style="width: 100%; border-collapse: collapse;">
         <thead>
-          <tr><th>Tanggal</th><th>Keterangan</th><th>Kategori</th><th>Jenis</th><th class="text-right">Jumlah</th></tr>
+          <tr>
+            <th style="padding: 14px 18px;">Tanggal</th>
+            <th style="padding: 14px 18px;">Keterangan</th>
+            <th style="padding: 14px 18px;">Kategori</th>
+            <th style="padding: 14px 18px;">Jenis</th>
+            <th class="text-right" style="padding: 14px 18px;">Jumlah</th>
+          </tr>
         </thead>
         <tbody>
           <?php if ($trx_terbaru->num_rows): while ($r = $trx_terbaru->fetch_assoc()): ?>
           <tr>
-            <td><i class="fas fa-calendar-alt" style="color:var(--text-muted);margin-right:6px"></i><?= date('d M Y', strtotime($r['tanggal'])) ?></td>
-            <td><?= htmlspecialchars($r['keterangan']) ?></td>
-            <td><span class="badge badge-primary"><?= htmlspecialchars($r['nama_kategori']) ?></span></td>
-            <td><?= $r['jenis']=='masuk' ? '<span class="badge badge-success"><i class="fas fa-arrow-down"></i> Masuk</span>' : '<span class="badge badge-danger"><i class="fas fa-arrow-up"></i> Keluar</span>' ?></td>
-            <td class="text-right fw-600 <?= $r['jenis']=='masuk'?'text-success':'text-danger' ?>"><?= ($r['jenis']=='masuk'?'+':'-').formatRupiah($r['jumlah']) ?></td>
+            <td style="padding: 14px 18px; white-space: nowrap;"><i class="fas fa-calendar-alt" style="color:var(--text-muted);margin-right:6px"></i><?= date('d M Y', strtotime($r['tanggal'])) ?></td>
+            <td style="padding: 14px 18px; font-weight: 500;"><?= htmlspecialchars($r['keterangan']) ?></td>
+            <td style="padding: 14px 18px;"><span class="badge badge-primary"><?= htmlspecialchars($r['nama_kategori']) ?></span></td>
+            <td style="padding: 14px 18px;">
+              <?= $r['jenis']=='masuk' 
+                ? '<span class="badge badge-success"><i class="fas fa-arrow-down"></i> Masuk</span>' 
+                : '<span class="badge badge-danger"><i class="fas fa-arrow-up"></i> Keluar</span>' ?>
+            </td>
+            <td class="text-right fw-600 <?= $r['jenis']=='masuk'?'text-success':'text-danger' ?>" style="padding: 14px 18px;">
+              <?= ($r['jenis']=='masuk'?'+':'-') . formatRupiah($r['jumlah']) ?>
+            </td>
           </tr>
           <?php endwhile; else: ?>
-          <tr><td colspan="5"><div class="empty-state"><div class="es-icon"><i class="fas fa-inbox"></i></div><h3>Belum ada transaksi</h3></div></td></tr>
+          <tr><td colspan="5"><div class="empty-state"><div class="es-icon"><i class="fas fa-inbox"></i></div><h3>Belum ada data transaksi</h3></div></td></tr>
           <?php endif; ?>
         </tbody>
       </table>
     </div>
-    <div style="text-align:center;margin-top:24px">
-      <a href="laporan-publik.php" class="btn btn-outline"><i class="fas fa-list"></i> Lihat Semua Transaksi</a>
-    </div>
   </div>
 </section>
 
-<!-- ===== TRANSPARANSI ===== -->
-<section class="section" style="background:linear-gradient(135deg,#f0f7f2,#e8f5ee);padding:52px 0">
-  <div class="container">
-    <div class="section-header">
-      <h2 class="section-title">Komitmen <span>Transparansi</span></h2>
-      <div class="section-divider"></div>
-      <p class="section-subtitle">Pengelolaan keuangan masjid yang terbuka dan dapat dipertanggungjawabkan kepada jamaah</p>
-    </div>
-    <div class="grid-3">
-      <?php $feats = [
-        ['fas fa-eye','green','Keterbukaan Informasi','Seluruh data transaksi pemasukan dan pengeluaran dapat diakses oleh jamaah secara langsung.'],
-        ['fas fa-chart-pie','gold','Visualisasi Data','Data keuangan disajikan dalam bentuk grafik interaktif sehingga mudah dipahami.'],
-        ['fas fa-file-alt','blue','Laporan Berkala','Tersedia laporan harian, mingguan, bulanan, dan tahunan dengan fitur ekspor PDF.'],
-        ['fas fa-shield-alt','green','Data Terverifikasi','Setiap transaksi dicatat oleh pengurus yang bertanggung jawab kepada jamaah.'],
-        ['fas fa-clock','gold','Real-time Update','Informasi saldo dan transaksi diperbarui secara langsung.'],
-        ['fas fa-mobile-alt','blue','Akses Kapan Saja','Dapat diakses dari perangkat apapun tanpa perlu menginstal aplikasi.'],
-      ];
-      foreach ($feats as $i => [$ico,$col,$ttl,$dsc]): ?>
-      <div class="card animate-fadeIn delay-<?= $i+1 ?>" style="padding:28px">
-        <div style="width:56px;height:56px;border-radius:16px;background:<?= $col=='green'?'rgba(26,122,74,.1)':($col=='gold'?'rgba(201,168,76,.1)':'rgba(59,130,246,.1)') ?>;display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:<?= $col=='green'?'var(--primary)':($col=='gold'?'var(--secondary)':'var(--info)') ?>;margin-bottom:18px"><i class="<?= $ico ?>"></i></div>
-        <h3 style="font-size:1rem;font-weight:700;margin-bottom:10px"><?= $ttl ?></h3>
-        <p style="font-size:.875rem;color:var(--text-secondary);line-height:1.7"><?= $dsc ?></p>
-      </div>
-      <?php endforeach; ?>
-    </div>
-  </div>
-</section>
-
+<!-- ===== FOOTER PUBLIK ===== -->
 <?php include 'includes/partials/footer-publik.php'; ?>
 
 <script>
@@ -302,12 +250,11 @@ Chart.defaults.plugins.tooltip.titleColor = '#fff';
 Chart.defaults.plugins.tooltip.bodyColor   = 'rgba(255,255,255,.85)';
 Chart.defaults.plugins.tooltip.padding     = 12;
 Chart.defaults.plugins.tooltip.cornerRadius = 8;
-
 const fmtRp = v => 'Rp ' + new Intl.NumberFormat('id-ID').format(v);
 const CG = ['#1a7a4a','#22a05e','#c9a84c','#3b82f6','#f59e0b','#8b5cf6','#ec4899','#14b8a6'];
 const CR = ['#ef4444','#f87171','#dc2626','#b91c1c','#fca5a5','#ff8080','#fecaca','#c53030'];
 
-// ── Bar Chart ──
+// Bar Chart
 new Chart(document.getElementById('barChart').getContext('2d'), {
   type:'bar',
   data:{ labels:<?= json_encode($chart_labels) ?>,
@@ -325,7 +272,7 @@ new Chart(document.getElementById('barChart').getContext('2d'), {
   }
 });
 
-// ── Line Chart ──
+// Line Chart
 new Chart(document.getElementById('lineChart').getContext('2d'), {
   type:'line',
   data:{ labels:<?= json_encode($line_labels) ?>,
@@ -343,7 +290,7 @@ new Chart(document.getElementById('lineChart').getContext('2d'), {
   }
 });
 
-// ── Pie Helper ──
+// Pie Helper
 function buildPie(cid, lid, labels, data, colors) {
   if (!labels.length) return;
   new Chart(document.getElementById(cid).getContext('2d'), {
@@ -364,8 +311,9 @@ function buildPie(cid, lid, labels, data, colors) {
 buildPie('pieIncome',  'legIncome',  <?= json_encode($pil) ?>, <?= json_encode($pid) ?>, CG);
 buildPie('pieExpense', 'legExpense', <?= json_encode($pel) ?>, <?= json_encode($ped) ?>, CR);
 
-// ── Counter Animation Hero ──
+// Animasi counter hero
 function animCounter(el, target) {
+  if(!el) return;
   let s = 0; const step = target / (1800/16);
   const t = setInterval(() => {
     s += step; if (s >= target) { s = target; clearInterval(t); }
@@ -375,16 +323,17 @@ function animCounter(el, target) {
 window.addEventListener('load', () => {
   animCounter(document.getElementById('heroMasuk'),  <?= $total_masuk ?>);
   animCounter(document.getElementById('heroKeluar'), <?= $total_keluar ?>);
+  animCounter(document.getElementById('heroSaldo'),  <?= $saldo ?>);
 });
 
-// ── SLIDESHOW ENGINE ──
+// Slideshow Engine
 const DURATION  = 10000;
 const slides    = document.querySelectorAll('.grafik-slide');
 const dots      = document.querySelectorAll('.slide-dot');
 const progress  = document.getElementById('slideProgress');
 const SLIDE_INFO = [
   {icon:'fas fa-chart-bar',  title:'Pemasukan vs Pengeluaran', desc:'Perbandingan pemasukan dan pengeluaran 6 bulan terakhir'},
-  {icon:'fas fa-chart-line', title:'Saldo Kumulatif',          desc:'Tren pertumbuhan saldo kas sepanjang tahun '+<?= $tahun ?>},
+  {icon:'fas fa-chart-line', title:'Saldo Kumulatif',          desc:'Tren pertumbuhan saldo kas sepanjang tahun ' + <?= $tahun ?>},
   {icon:'fas fa-chart-pie',  title:'Proporsi Pemasukan',       desc:'Distribusi sumber pemasukan berdasarkan kategori'},
   {icon:'fas fa-chart-pie',  title:'Proporsi Pengeluaran',     desc:'Distribusi pengeluaran berdasarkan kategori'},
 ];
@@ -403,19 +352,18 @@ function goToSlide(n) {
   document.getElementById('slideCounter').textContent = `${cur+1} / ${slides.length}`;
   resetProgress();
 }
-
-function changeSlide(dir) { goToSlide(cur + dir); if (!paused) startAuto(); }
-
+function changeSlide(dir) {
+  goToSlide(cur + dir);
+  if (!paused) startAuto();
+}
 function startAuto() {
   clearTimeout(timer);
   timer = setTimeout(() => { if (!paused) { goToSlide(cur+1); startAuto(); } }, DURATION);
 }
-
 function resetProgress() {
   progress.style.transition = 'none'; progress.style.width = '0%';
   if (!paused) setTimeout(() => { progress.style.transition = `width ${DURATION}ms linear`; progress.style.width='100%'; }, 30);
 }
-
 function togglePause() {
   paused = !paused;
   const ico = document.getElementById('pauseIcon');
@@ -430,29 +378,8 @@ function togglePause() {
     resetProgress();
   }
 }
-
-// Start
-startAuto(); resetProgress();
-
-// Keyboard
-document.addEventListener('keydown', e => {
-  if (e.key==='ArrowRight') changeSlide(1);
-  if (e.key==='ArrowLeft')  changeSlide(-1);
-  if (e.key===' ') { e.preventDefault(); togglePause(); }
-});
-
-// Navbar toggle
-document.getElementById('navToggle').addEventListener('click', () => document.getElementById('navLinks').classList.toggle('open'));
-
-// Scroll animation
-const obs = new IntersectionObserver(entries => entries.forEach(e => {
-  if (e.isIntersecting) { e.target.style.opacity='1'; e.target.style.transform='translateY(0)'; }
-}), {threshold:.08});
-document.querySelectorAll('.card,.stat-card,.saldo-card,.table-wrapper').forEach((el,i) => {
-  el.style.opacity='0'; el.style.transform='translateY(24px)';
-  el.style.transition=`opacity .6s ease ${i*.07}s,transform .6s ease ${i*.07}s`;
-  obs.observe(el);
-});
+startAuto();
+resetProgress();
 </script>
 </body>
 </html>
