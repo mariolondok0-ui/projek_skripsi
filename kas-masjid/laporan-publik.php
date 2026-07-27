@@ -25,7 +25,13 @@ $sum=$conn->query("SELECT COALESCE(SUM(CASE WHEN jenis='masuk' THEN jumlah END),
 </head><body>
 <?php include 'includes/partials/navbar-publik.php'; ?>
 <div style="background:linear-gradient(135deg,#0f3d26,#1a7a4a);padding:48px 0 32px">
-  <div class="container"><div class="hero-badge"><i class="fas fa-file-alt"></i> Laporan Keuangan Publik</div>
+  <div class="container">
+    <a href="<?= APP_URL ?>/index.php"
+       style="display:inline-flex;align-items:center;gap:8px;color:rgba(255,255,255,.75);font-size:.85rem;font-weight:500;margin-bottom:18px;transition:color .15s"
+       onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.75)'">
+      <i class="fas fa-arrow-left"></i> Kembali
+    </a>
+    <div class="hero-badge"><i class="fas fa-file-alt"></i> Laporan Keuangan Publik</div>
     <h1 style="font-size:1.8rem;font-weight:800;color:#fff;margin-top:12px;margin-bottom:8px">Laporan Keuangan Kas Masjid</h1>
     <p style="color:rgba(255,255,255,.75)"><?= MASJID_NAME ?> &bull; Data terbuka untuk seluruh jamaah</p>
   </div>

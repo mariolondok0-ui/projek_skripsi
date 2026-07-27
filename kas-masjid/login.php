@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Login Admin - <?= APP_NAME ?></title>
+<title>Kembali - <?= APP_NAME ?></title>
 <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
@@ -43,8 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   
   <!-- Bagian Kiri (Latar Belakang Hijau dengan Logo & Nama Masjid) -->
   <div style="flex: 1; background: linear-gradient(145deg, #0b2e1d 0%, #1a7a4a 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px; text-align: center; color: #fff; position: relative;">
-    <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.15); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(6px);">
-      <i class="fas fa-mosque"></i>
+    <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.15); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(6px); overflow:hidden;">
+      <img src="<?= APP_URL ?>/assets/img/logo.jpg" alt="Logo Masjid" style="width:80px;height:80px;object-fit:cover;border-radius:20px;display:block">
     </div>
     <h2 style="font-size: 1.5rem; font-weight: 800; margin: 0; line-height: 1.4; letter-spacing: 0.5px;"><?= MASJID_NAME ?></h2>
   </div>

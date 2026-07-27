@@ -115,7 +115,7 @@ $alert = getAlert();
         <h1 class="page-title"><i class="fas fa-arrow-circle-up" style="color:var(--danger)"></i> Kas Keluar</h1>
         <p class="page-subtitle">Kelola data pengeluaran kas <?= MASJID_NAME ?></p>
       </div>
-      <a href="javascript:history.back()" class="btn btn-ghost" style="border: 1.5px solid var(--border); background: var(--bg-card);">
+      <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn btn-ghost" style="border:1.5px solid var(--border);background:var(--bg-card)">
         <i class="fas fa-arrow-left"></i> Kembali
       </a>
     </div>

@@ -69,7 +69,7 @@ $alert = getAlert();
       </div>
       
       <div style="display:flex; gap:10px;">
-        <a href="javascript:history.back()" class="btn btn-ghost" style="border: 1.5px solid var(--border); background: var(--bg-card);"><i class="fas fa-arrow-left"></i> Kembali</a>
+        <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn btn-ghost" style="border:1.5px solid var(--border);background:var(--bg-card)"><i class="fas fa-arrow-left"></i> Kembali</a>
         <?php if($rows->num_rows > 0): ?>
         <a href="?empty=1" class="btn btn-danger" onclick="return confirm('Yakin ingin mengosongkan seluruh tempat sampah?')"><i class="fas fa-ban"></i> Kosongkan Sampah</a>
         <?php endif; ?>

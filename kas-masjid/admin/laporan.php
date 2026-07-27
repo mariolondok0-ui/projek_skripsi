@@ -313,7 +313,7 @@ endif;
         
         <!-- Tombol Kembali dan Cetak/PDF yang sudah disatukan -->
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <a href="javascript:history.back()" class="btn btn-ghost" style="border: 1.5px solid var(--border); background: var(--bg-card);">
+          <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn btn-ghost" style="border:1.5px solid var(--border);background:var(--bg-card)">
             <i class="fas fa-arrow-left"></i> Kembali
           </a>
           <a href="?<?= http_build_query(array_merge($_GET,['print'=>1])) ?>" target="_blank" class="btn btn-secondary">

@@ -121,19 +121,19 @@ $alert = getAlert();
         <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
         <div class="stat-label">Total Pemasukan</div>
         <div class="stat-value"><?= formatRupiah($total_masuk) ?></div>
-        <div class="stat-sub"><i class="fas fa-calendar-alt up"></i> Semua periode</div>
+        <div class="stat-sub"><i class="fas fa-calendar-alt up"></i> Real-time</div>
       </div>
       <div class="stat-card red animate-fadeIn delay-3">
         <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
         <div class="stat-label">Total Pengeluaran</div>
         <div class="stat-value"><?= formatRupiah($total_keluar) ?></div>
-        <div class="stat-sub"><i class="fas fa-calendar-alt down"></i> Semua periode</div>
+        <div class="stat-sub"><i class="fas fa-calendar-alt down"></i> Real-time</div>
       </div>
       <div class="stat-card blue animate-fadeIn delay-4">
         <div class="stat-icon"><i class="fas fa-exchange-alt"></i></div>
         <div class="stat-label">Total Transaksi</div>
         <div class="stat-value"><?= number_format($total_trx) ?></div>
-        <div class="stat-sub"><i class="fas fa-list"></i> <?= $trx_bln ?> bulan ini</div>
+        <div class="stat-sub"><i class="fas fa-list"></i> <?= $trx_bln ?> Real-time</div>
       </div>
     </div>
 
@@ -161,7 +161,6 @@ $alert = getAlert();
     <div class="card mb-3 animate-fadeIn">
       <div class="card-header" style="padding-bottom:16px;border-bottom:1px solid var(--border-light)">
         <div class="card-title"><i class="fas fa-chart-bar"></i> Visualisasi Data Keuangan</div>
-        <a href="../grafik-publik.php" target="_blank" class="btn btn-ghost btn-sm"><i class="fas fa-external-link-alt"></i> Tampilan Publik</a>
       </div>
       <div class="card-body">
 
