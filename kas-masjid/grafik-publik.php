@@ -36,6 +36,14 @@ $s = $conn->query("SELECT COALESCE(SUM(CASE WHEN jenis='masuk' THEN jumlah END),
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
+/* ===== RESPONSIVE GRAFIK ===== */
+@media (max-width: 768px) {
+  .grid-3 { grid-template-columns: 1fr !important; }
+  .chart-pie-wrap { flex-direction: column; align-items: center; gap: 16px !important; }
+  .chart-pie-wrap > div:first-child { width: 220px !important; height: 220px !important; }
+  #legIncome, #legExpense { max-width: 100% !important; width: 100%; }
+}
+
 /* ===== GRAFIK SLIDESHOW ===== */
 .grafik-wrapper {
   position: relative;
@@ -163,50 +171,61 @@ $s = $conn->query("SELECT COALESCE(SUM(CASE WHEN jenis='masuk' THEN jumlah END),
 <?php include 'includes/partials/navbar-publik.php'; ?>
 
 <!-- PAGE HEADER -->
-<div style="background:linear-gradient(135deg,#0f3d26,#1a7a4a);padding:48px 0 32px">
-  <div class="container">
+<div style="background:linear-gradient(135deg,#0f3d26,#1a7a4a);padding:40px 0 28px;position:relative;overflow:hidden">
+  <div style="position:absolute;top:-50px;right:-50px;width:180px;height:180px;background:rgba(255,255,255,.05);border-radius:50%"></div>
+  <div class="container" style="position:relative;z-index:1">
     <a href="<?= APP_URL ?>/index.php"
-       style="display:inline-flex;align-items:center;gap:8px;color:rgba(255,255,255,.75);font-size:.85rem;font-weight:500;margin-bottom:18px;transition:color .15s"
+       style="display:inline-flex;align-items:center;gap:7px;color:rgba(255,255,255,.75);font-size:.82rem;font-weight:500;transition:color .15s;text-decoration:none"
        onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.75)'">
-      <i class="fas fa-arrow-left"></i> Kembali
+      <i class="fas fa-arrow-left"></i> Kembali ke Beranda
     </a>
-    <div class="hero-badge"><i class="fas fa-chart-bar"></i> Visualisasi Data Keuangan</div>
-    <h1 style="font-size:1.8rem;font-weight:800;color:#fff;margin-top:12px;margin-bottom:8px">Grafik Keuangan Kas Masjid</h1>
-    <p style="color:rgba(255,255,255,.75)"><?= MASJID_NAME ?> &bull; Tahun <?= $tahun ?></p>
+    <div style="margin-top:14px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px">
+      <div>
+        <div style="display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.15);color:rgba(255,255,255,.9);padding:5px 14px;border-radius:99px;font-size:.78rem;font-weight:600;border:1px solid rgba(255,255,255,.2)">
+          <i class="fas fa-chart-bar"></i> Visualisasi Data Keuangan
+        </div>
+        <h1 style="font-size:clamp(1.3rem,3vw,1.8rem);font-weight:800;color:#fff;margin:10px 0 4px">
+          Grafik Keuangan Kas Masjid
+        </h1>
+        <p style="color:rgba(255,255,255,.75);font-size:.875rem">
+          <?= MASJID_NAME ?> &bull; Tahun <?= $tahun ?>
+        </p>
+      </div>
+      <!-- Filter tahun di header -->
+      <form method="GET" style="display:flex;align-items:center;gap:10px">
+        <label style="color:rgba(255,255,255,.8);font-size:.8rem;font-weight:600;white-space:nowrap">
+          <i class="fas fa-calendar"></i> Tahun:
+        </label>
+        <select name="tahun" class="form-control form-select"
+                style="max-width:120px;background:#fff;font-size:.85rem;padding:8px 12px"
+                onchange="this.form.submit()">
+          <?php for($y=date('Y');$y>=2020;$y--): ?>
+          <option value="<?= $y ?>" <?= $tahun==$y?'selected':'' ?>><?= $y ?></option>
+          <?php endfor; ?>
+        </select>
+      </form>
+    </div>
   </div>
 </div>
 
-<div class="container" style="padding-top:36px;padding-bottom:72px">
-
-  <!-- Filter Tahun -->
-  <div class="filter-bar mb-3">
-    <span class="filter-label"><i class="fas fa-calendar"></i> Tahun:</span>
-    <form method="GET" style="display:flex;align-items:center;gap:12px;flex:1;flex-wrap:wrap">
-      <select name="tahun" class="form-control form-select" style="max-width:140px" onchange="this.form.submit()">
-        <?php for ($y = date('Y'); $y >= 2020; $y--): ?>
-          <option value="<?= $y ?>" <?= $tahun==$y?'selected':'' ?>><?= $y ?></option>
-        <?php endfor; ?>
-      </select>
-      <span style="font-size:.875rem;color:var(--text-muted)">Menampilkan data keuangan tahun <?= $tahun ?></span>
-    </form>
-  </div>
+<div class="container" style="padding-top:28px;padding-bottom:64px">
 
   <!-- Summary Cards -->
-  <div class="grid-3 mb-3">
-    <div class="stat-card green animate-fadeIn">
-      <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
-      <div class="stat-label">Total Pemasukan <?= $tahun ?></div>
-      <div class="stat-value"><?= formatRupiah($s['m']) ?></div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px" class="grid-3">
+    <div class="stat-card green animate-fadeIn" style="padding:18px">
+      <div class="stat-icon" style="width:40px;height:40px;font-size:1.1rem;margin-bottom:10px"><i class="fas fa-arrow-down"></i></div>
+      <div class="stat-label">Pemasukan <?= $tahun ?></div>
+      <div class="stat-value" style="font-size:1rem"><?= formatRupiah($s['m']) ?></div>
     </div>
-    <div class="stat-card red animate-fadeIn delay-1">
-      <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
-      <div class="stat-label">Total Pengeluaran <?= $tahun ?></div>
-      <div class="stat-value"><?= formatRupiah($s['k']) ?></div>
+    <div class="stat-card red animate-fadeIn delay-1" style="padding:18px">
+      <div class="stat-icon" style="width:40px;height:40px;font-size:1.1rem;margin-bottom:10px"><i class="fas fa-arrow-up"></i></div>
+      <div class="stat-label">Pengeluaran <?= $tahun ?></div>
+      <div class="stat-value" style="font-size:1rem"><?= formatRupiah($s['k']) ?></div>
     </div>
-    <div class="stat-card gold animate-fadeIn delay-2">
-      <div class="stat-icon"><i class="fas fa-balance-scale"></i></div>
-      <div class="stat-label">Saldo Tahun <?= $tahun ?></div>
-      <div class="stat-value <?= ($s['m']-$s['k'])>=0?'text-success':'text-danger' ?>"><?= formatRupiah($s['m']-$s['k']) ?></div>
+    <div class="stat-card gold animate-fadeIn delay-2" style="padding:18px">
+      <div class="stat-icon" style="width:40px;height:40px;font-size:1.1rem;margin-bottom:10px"><i class="fas fa-balance-scale"></i></div>
+      <div class="stat-label">Saldo <?= $tahun ?></div>
+      <div class="stat-value <?= ($s['m']-$s['k'])>=0?'text-success':'text-danger' ?>" style="font-size:1rem"><?= formatRupiah($s['m']-$s['k']) ?></div>
     </div>
   </div>
 

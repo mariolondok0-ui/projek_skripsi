@@ -43,8 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   
   <!-- Bagian Kiri (Latar Belakang Hijau dengan Logo & Nama Masjid) -->
   <div style="flex: 1; background: linear-gradient(145deg, #0b2e1d 0%, #1a7a4a 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px; text-align: center; color: #fff; position: relative;">
-    <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.15); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(6px); overflow:hidden;">
-      <img src="<?= APP_URL ?>/assets/img/logo.jpg" alt="Logo Masjid" style="width:80px;height:80px;object-fit:cover;border-radius:20px;display:block">
+    <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.15); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(6px);">
+      <i class="fas fa-mosque" style="color:#fff"></i>
     </div>
     <h2 style="font-size: 1.5rem; font-weight: 800; margin: 0; line-height: 1.4; letter-spacing: 0.5px;"><?= MASJID_NAME ?></h2>
   </div>
@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <div style="margin-top: 12px; padding: 10px; background: var(--bg-main); border-radius: 8px; font-size: 0.75rem; color: var(--text-muted); text-align: center;">
-      <i class="fas fa-info-circle" style="color: var(--info);"></i> Demo: <strong>admin@masjid.com</strong> / <strong>password</strong>
+      <i class="fas fa-info-circle" style="color: var(--info);"></i> Demo: <strong>Masukan Email Dan Password</strong>
     </div>
   </div>
 

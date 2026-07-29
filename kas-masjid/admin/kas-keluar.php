@@ -30,23 +30,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect(APP_URL . '/admin/kas-keluar.php');
 }
 
-// ---- Handle DELETE & TRASH ----
+// ---- Handle DELETE → Soft Delete ke Tempat Sampah ----
 if (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
-    $type = $_GET['type'] ?? 'soft';
-    
-    if ($type === 'hard') {
-        $conn->query("DELETE FROM transaksi WHERE id=$id AND jenis='keluar'");
-        setAlert('success', 'Data berhasil dihapus permanen.');
-    } else {
-        // Pindahkan ke tabel sampah
-        $stmt = $conn->prepare("INSERT INTO transaksi_sampah (old_id, tanggal, keterangan, jumlah, jenis, kategori_id, user_id) SELECT id, tanggal, keterangan, jumlah, jenis, kategori_id, user_id FROM transaksi WHERE id = ? AND jenis='keluar'");
-        $stmt->bind_param('i', $id);
-        if ($stmt->execute()) {
-            $conn->query("DELETE FROM transaksi WHERE id=$id");
-            setAlert('success', 'Data berhasil dipindahkan ke Tempat Sampah.');
-        }
-    }
+    $conn->query("UPDATE transaksi SET deleted_at=NOW() WHERE id=$id AND jenis='keluar' AND deleted_at IS NULL");
+    setAlert('success', 'Data dipindahkan ke <a href="'.APP_URL.'/admin/tempat-sampah.php" style="color:inherit;font-weight:700;text-decoration:underline">Tempat Sampah</a>. Bisa dipulihkan kapan saja.');
     redirect(APP_URL . '/admin/kas-keluar.php');
 }
 
@@ -62,8 +50,8 @@ $filter_bulan  = sanitize($_GET['bulan'] ?? date('Y-m'));
 $page = max(1, (int)($_GET['page'] ?? 1));
 $per_page = 12;
 
-$where = "t.jenis='keluar' AND DATE_FORMAT(t.tanggal,'%Y-%m')='$filter_bulan'";
-$where_simple = "jenis='keluar' AND DATE_FORMAT(tanggal,'%Y-%m')='$filter_bulan'";
+$where        = "t.jenis='keluar' AND DATE_FORMAT(t.tanggal,'%Y-%m')='$filter_bulan' AND t.deleted_at IS NULL";
+$where_simple = "jenis='keluar' AND DATE_FORMAT(tanggal,'%Y-%m')='$filter_bulan' AND deleted_at IS NULL";
 
 $total_rows  = $conn->query("SELECT COUNT(*) as c FROM transaksi WHERE $where_simple")->fetch_assoc()['c'];
 $total_pages = max(1, ceil($total_rows / $per_page));
