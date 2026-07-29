@@ -42,7 +42,7 @@ if (isset($_GET['delete'])) {
 $edit_data = null;
 if (isset($_GET['edit'])) {
     $id = (int)$_GET['edit'];
-    $edit_data = $conn->query("SELECT * FROM transaksi WHERE id=$id AND jenis='keluar'")->fetch_assoc();
+    $edit_data = $conn->query("SELECT * FROM transaksi WHERE id=$id AND jenis='keluar' AND deleted_at IS NULL")->fetch_assoc();
 }
 
 $kategori_list = $conn->query("SELECT * FROM kategori WHERE jenis='keluar' ORDER BY nama_kategori");
@@ -69,7 +69,7 @@ $alert = getAlert();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Kas Keluar - <?= APP_NAME ?></title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=2026">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>

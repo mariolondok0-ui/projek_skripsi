@@ -208,8 +208,9 @@ input,select,textarea{font-family:inherit;outline:none}
 .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 
 /* ===== PUBLIC NAVBAR ===== */
-.pub-navbar{position:fixed;top:0;left:0;right:0;z-index:900;background:rgba(15,61,38,.97);backdrop-filter:blur(12px);height:68px;display:flex;align-items:center;padding:0 32px;box-shadow:0 2px 20px rgba(0,0,0,.25);transition:var(--transition)}
-.pub-navbar .nav-brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:1.1rem;color:#fff}
+.pub-navbar{position:fixed;top:0;left:0;right:0;z-index:900;background:rgba(15,61,38,.97);backdrop-filter:blur(12px);height:68px;display:flex;align-items:center;padding:0;box-shadow:0 2px 20px rgba(0,0,0,.25);transition:var(--transition)}
+.pub-navbar .nav-inner{max-width:1180px;width:100%;margin:0 auto;padding:0 24px;display:flex;align-items:center}
+.pub-navbar .nav-brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:1.1rem;color:#fff;flex-shrink:0}
 .pub-navbar .nav-brand .brand-icon{width:40px;height:40px;background:var(--secondary);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#fff;flex-shrink:0}
 .pub-navbar .nav-links{display:flex;align-items:center;gap:4px;margin-left:auto}
 .pub-navbar .nav-links a{padding:8px 16px;border-radius:var(--radius-sm);color:rgba(255,255,255,.8);font-size:.875rem;font-weight:500;transition:var(--transition-fast)}
@@ -393,4 +394,28 @@ input,select,textarea{font-family:inherit;outline:none}
     .admin-wrapper.toggled .admin-main {
         margin-left: 0;
     }
+}
+
+/* ===== NAVBAR FIX — rata dengan container ===== */
+.pub-navbar { padding: 0 !important; }
+.pub-navbar .nav-brand { flex-shrink: 0; }
+.nav-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+@media (max-width: 1200px) { .nav-inner { padding: 0 24px; } }
+@media (max-width: 768px) {
+  .nav-inner { padding: 0 16px !important; }
+  .hero-section .container { padding: 0 16px !important; }
+  .hero-inner { max-width: 100%; }
+  .hero-stats-bar { flex-wrap: wrap; }
+  .hstat { min-width: 30%; }
+}
+@media (max-width: 480px) {
+  .hstat { min-width: 100%; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,.12); }
+  .hstat:last-child { border-bottom: none; }
 }

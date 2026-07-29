@@ -11,7 +11,7 @@ $tgl_dari       = $_GET['dari']    ?? date('Y-m-01');
 $tgl_sampai     = $_GET['sampai']  ?? date('Y-m-d');
 
 // Build WHERE
-$where = ['1=1'];
+$where = ['t.deleted_at IS NULL'];
 if ($filter_jenis !== 'semua') $where[] = "t.jenis = '" . sanitize($filter_jenis) . "'";
 
 switch ($filter_periode) {
@@ -278,7 +278,7 @@ endif;
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Laporan <?= APP_NAME ?></title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=2026">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>

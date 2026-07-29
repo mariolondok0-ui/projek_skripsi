@@ -8,23 +8,23 @@ $bm = $bk = $sl = [];
 $kum = 0;
 for ($m = 1; $m <= 12; $m++) {
     $b  = sprintf('%04d-%02d', $tahun, $m);
-    $mk = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='masuk'  AND DATE_FORMAT(tanggal,'%Y-%m')='$b'")->fetch_assoc()['t'];
-    $kl = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='keluar' AND DATE_FORMAT(tanggal,'%Y-%m')='$b'")->fetch_assoc()['t'];
+    $mk = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='masuk' AND deleted_at IS NULL AND DATE_FORMAT(tanggal,'%Y-%m')='$b'")->fetch_assoc()['t'];
+    $kl = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='keluar' AND deleted_at IS NULL AND DATE_FORMAT(tanggal,'%Y-%m')='$b'")->fetch_assoc()['t'];
     $bm[] = $mk; $bk[] = $kl; $kum += ($mk - $kl); $sl[] = $kum;
 }
 
 // Pie pemasukan
-$pi = $conn->query("SELECT k.nama_kategori, COALESCE(SUM(t.jumlah),0) as total FROM transaksi t JOIN kategori k ON t.kategori_id=k.id WHERE t.jenis='masuk' AND YEAR(t.tanggal)=$tahun GROUP BY k.id ORDER BY total DESC LIMIT 8");
+$pi = $conn->query("SELECT k.nama_kategori, COALESCE(SUM(t.jumlah),0) as total FROM transaksi t JOIN kategori k ON t.kategori_id=k.id WHERE t.jenis='masuk' AND t.deleted_at IS NULL AND YEAR(t.tanggal)=$tahun GROUP BY k.id ORDER BY total DESC LIMIT 8");
 $pil = $pid = [];
 while ($r = $pi->fetch_assoc()) { $pil[] = $r['nama_kategori']; $pid[] = (float)$r['total']; }
 
 // Pie pengeluaran
-$pe = $conn->query("SELECT k.nama_kategori, COALESCE(SUM(t.jumlah),0) as total FROM transaksi t JOIN kategori k ON t.kategori_id=k.id WHERE t.jenis='keluar' AND YEAR(t.tanggal)=$tahun GROUP BY k.id ORDER BY total DESC LIMIT 8");
+$pe = $conn->query("SELECT k.nama_kategori, COALESCE(SUM(t.jumlah),0) as total FROM transaksi t JOIN kategori k ON t.kategori_id=k.id WHERE t.jenis='keluar' AND t.deleted_at IS NULL AND YEAR(t.tanggal)=$tahun GROUP BY k.id ORDER BY total DESC LIMIT 8");
 $pel = $ped = [];
 while ($r = $pe->fetch_assoc()) { $pel[] = $r['nama_kategori']; $ped[] = (float)$r['total']; }
 
 // Summary
-$s = $conn->query("SELECT COALESCE(SUM(CASE WHEN jenis='masuk' THEN jumlah END),0) AS m, COALESCE(SUM(CASE WHEN jenis='keluar' THEN jumlah END),0) AS k FROM transaksi WHERE YEAR(tanggal)=$tahun")->fetch_assoc();
+$s = $conn->query("SELECT COALESCE(SUM(CASE WHEN jenis='masuk' THEN jumlah END),0) AS m, COALESCE(SUM(CASE WHEN jenis='keluar' THEN jumlah END),0) AS k FROM transaksi WHERE YEAR(tanggal)=$tahun AND deleted_at IS NULL")->fetch_assoc();
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -32,7 +32,7 @@ $s = $conn->query("SELECT COALESCE(SUM(CASE WHEN jenis='masuk' THEN jumlah END),
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Visualisasi Grafik – <?= APP_NAME ?></title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=<?= time() ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>

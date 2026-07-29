@@ -42,12 +42,15 @@ $trx_terbaru = $conn->query("SELECT t.*,k.nama_kategori FROM transaksi t JOIN ka
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title><?= APP_NAME ?> – Transparansi Keuangan Masjid</title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=<?= time() ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 /* ===== LANDING PAGE ===== */
 .hero-section{background:linear-gradient(135deg,#0b2e1c 0%,#1a7a4a 50%,#0d9488 100%);background-size:200% 200%;animation:gradientShift 10s ease infinite;min-height:100svh;display:flex;align-items:center;position:relative;overflow:hidden;padding:80px 0 56px}
+/* FIX: Konten hero rata kiri sesuai container */
+.hero-section .container{position:relative;z-index:2;width:100%;max-width:1180px;margin:0 auto;padding:0 24px}
+.hero-inner{max-width:700px;width:100%}
 .hero-section::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E")}
 .hero-c1{position:absolute;top:-80px;right:-80px;width:300px;height:300px;background:rgba(255,255,255,.04);border-radius:50%;pointer-events:none}
 .hero-c2{position:absolute;bottom:-60px;left:-60px;width:220px;height:220px;background:rgba(201,168,76,.08);border-radius:50%;pointer-events:none}
@@ -122,18 +125,20 @@ $trx_terbaru = $conn->query("SELECT t.*,k.nama_kategori FROM transaksi t JOIN ka
 <section class="hero-section">
   <div class="hero-c1"></div>
   <div class="hero-c2"></div>
-  <div class="container" style="position:relative;z-index:2;width:100%">
-    <div class="hero-badge-pub"><i class="fas fa-mosque"></i> <?= MASJID_NAME ?></div>
-    <h1 class="hero-title">Transparansi Keuangan<br><span>Kas Masjid</span> untuk Jamaah</h1>
-    <p class="hero-desc">Pantau pemasukan, pengeluaran, dan saldo kas masjid secara real-time. Informasi terbuka dan dapat diakses oleh seluruh jamaah kapan saja.</p>
-    <div class="hero-btns">
-      <a href="laporan-publik.php" class="hbtn-gold"><i class="fas fa-file-alt"></i> Lihat Laporan</a>
-      <a href="grafik-publik.php"  class="hbtn-ghost"><i class="fas fa-chart-bar"></i> Lihat Grafik</a>
-    </div>
-    <div class="hero-stats-bar">
-      <div class="hstat"><div class="hv" id="heroMasuk">Rp 0</div><div class="hl"><i class="fas fa-arrow-down" style="color:#6ee7b7;margin-right:2px"></i>Total Pemasukan</div></div>
-      <div class="hstat"><div class="hv" id="heroKeluar">Rp 0</div><div class="hl"><i class="fas fa-arrow-up" style="color:#fca5a5;margin-right:2px"></i>Total Pengeluaran</div></div>
-      <div class="hstat"><div class="hv"><?= $total_trx ?></div><div class="hl"><i class="fas fa-exchange-alt" style="color:#93c5fd;margin-right:2px"></i>Total Transaksi</div></div>
+  <div class="container">
+    <div class="hero-inner">
+      <div class="hero-badge-pub"><i class="fas fa-mosque"></i> <?= MASJID_NAME ?></div>
+      <h1 class="hero-title">Transparansi Keuangan<br><span>Kas Masjid</span> untuk Jamaah</h1>
+      <p class="hero-desc">Pantau pemasukan, pengeluaran, dan saldo kas masjid secara real-time. Informasi terbuka dan dapat diakses oleh seluruh jamaah kapan saja.</p>
+      <div class="hero-btns">
+        <a href="laporan-publik.php" class="hbtn-gold"><i class="fas fa-file-alt"></i> Lihat Laporan</a>
+        <a href="grafik-publik.php"  class="hbtn-ghost"><i class="fas fa-chart-bar"></i> Lihat Grafik</a>
+      </div>
+      <div class="hero-stats-bar">
+        <div class="hstat"><div class="hv" id="heroMasuk">Rp 0</div><div class="hl"><i class="fas fa-arrow-down" style="color:#6ee7b7;margin-right:2px"></i>Total Pemasukan</div></div>
+        <div class="hstat"><div class="hv" id="heroKeluar">Rp 0</div><div class="hl"><i class="fas fa-arrow-up" style="color:#fca5a5;margin-right:2px"></i>Total Pengeluaran</div></div>
+        <div class="hstat"><div class="hv"><?= $total_trx ?></div><div class="hl"><i class="fas fa-exchange-alt" style="color:#93c5fd;margin-right:2px"></i>Total Transaksi</div></div>
+      </div>
     </div>
   </div>
 </section>
