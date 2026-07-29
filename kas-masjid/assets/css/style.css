@@ -419,3 +419,84 @@ input,select,textarea{font-family:inherit;outline:none}
   .hstat { min-width: 100%; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,.12); }
   .hstat:last-child { border-bottom: none; }
 }
+
+/* ================================================
+   ADMIN RESPONSIVE — Dashboard, Kas Masuk/Keluar
+   ================================================ */
+
+/* Topbar responsive */
+@media (max-width: 768px) {
+  .topbar { padding: 0 14px; height: 60px; }
+  .topbar-date { display: none; }
+  .topbar-user .t-name { display: none; }
+  .topbar-user { padding: 4px 8px; }
+  .breadcrumb .bc-item:first-child { display: none; }
+  .breadcrumb .bc-sep:first-of-type { display: none; }
+  .admin-content { padding: 14px; }
+  .page-title { font-size: 1.2rem; }
+
+  /* Grid responsive */
+  .grid-4 { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+  .grid-2 { grid-template-columns: 1fr !important; gap: 14px !important; }
+  .grid-3 { grid-template-columns: 1fr !important; gap: 12px !important; }
+
+  /* Stat cards lebih compact */
+  .stat-card { padding: 16px; }
+  .stat-card .stat-icon { width: 42px; height: 42px; font-size: 1.1rem; margin-bottom: 10px; }
+  .stat-card .stat-value { font-size: 1.1rem; }
+
+  /* Banner bulan ini */
+  .banner-bln { flex-direction: column !important; gap: 14px !important; align-items: flex-start !important; }
+  .banner-bln-stats { flex-wrap: wrap !important; gap: 14px !important; }
+  .banner-bln-btns { width: 100%; display: flex; gap: 8px; }
+  .banner-bln-btns a { flex: 1; justify-content: center; }
+
+  /* Form kas masuk/keluar grid */
+  .form-kas-grid { grid-template-columns: 1fr !important; }
+
+  /* Summary bar */
+  .summary-bar { flex-wrap: wrap !important; gap: 10px !important; }
+  .summary-bar-item { min-width: 140px; }
+
+  /* Table — sembunyikan kolom yang tidak penting */
+  .table-mobile-hide { display: none !important; }
+
+  /* Card list mobile untuk transaksi */
+  .trx-mobile-card { display: flex !important; }
+  .table-wrapper-desktop { display: none !important; }
+}
+
+@media (max-width: 480px) {
+  .grid-4 { grid-template-columns: 1fr !important; }
+  .admin-content { padding: 10px; }
+  .stat-card .stat-value { font-size: 1rem; }
+  .page-header { margin-bottom: 16px; }
+}
+
+/* Card transaksi mobile */
+.trx-mobile-card {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+.trx-m-item {
+  background: var(--bg-card);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+  display: flex; align-items: center; gap: 12px;
+  transition: var(--transition);
+}
+.trx-m-item:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+.trx-m-icon {
+  width: 40px; height: 40px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .9rem; flex-shrink: 0;
+}
+.trx-m-body { flex: 1; min-width: 0; }
+.trx-m-name { font-size: .875rem; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trx-m-meta { font-size: .72rem; color: var(--text-muted); margin-top: 2px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.trx-m-right { text-align: right; flex-shrink: 0; }
+.trx-m-amount { font-size: .95rem; font-weight: 800; }
+.trx-m-actions { display: flex; gap: 6px; margin-top: 4px; justify-content: flex-end; }

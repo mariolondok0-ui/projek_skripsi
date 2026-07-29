@@ -127,7 +127,7 @@ $alert = getAlert();
           <?php if ($edit_data): ?>
           <input type="hidden" name="id" value="<?= $edit_data['id'] ?>">
           <?php endif; ?>
-          <div class="grid-2" style="gap:16px">
+          <div class="grid-2 form-kas-grid" style="gap:16px">
             <div class="form-group mb-0">
               <label class="form-label">Tanggal <span class="required">*</span></label>
               <div class="input-group">
@@ -182,67 +182,96 @@ $alert = getAlert();
     </div>
 
     <!-- Summary & Filter -->
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:16px">
-      <div style="display:flex;gap:16px;flex-wrap:wrap">
-        <div style="background:var(--bg-card);padding:14px 20px;border-radius:var(--radius);box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:10px">
-          <i class="fas fa-arrow-down" style="color:var(--success)"></i>
-          <div><div style="font-size:.72rem;color:var(--text-muted)">Total Bulan Ini</div>
-          <div style="font-weight:800;color:var(--success)"><?= formatRupiah($summary['total']) ?></div></div>
+    <div class="summary-bar" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div class="summary-bar-item" style="background:var(--bg-card);padding:12px 18px;border-radius:var(--radius);box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:10px;border-left:3px solid var(--success)">
+          <i class="fas fa-arrow-down" style="color:var(--success);font-size:1.1rem"></i>
+          <div><div style="font-size:.7rem;color:var(--text-muted)">Total Bulan Ini</div>
+          <div style="font-weight:800;color:var(--success);font-size:.95rem"><?= formatRupiah($summary['total']) ?></div></div>
         </div>
-        <div style="background:var(--bg-card);padding:14px 20px;border-radius:var(--radius);box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:10px">
-          <i class="fas fa-list" style="color:var(--info)"></i>
-          <div><div style="font-size:.72rem;color:var(--text-muted)">Jumlah Transaksi</div>
-          <div style="font-weight:800;color:var(--info)"><?= $summary['cnt'] ?> transaksi</div></div>
+        <div class="summary-bar-item" style="background:var(--bg-card);padding:12px 18px;border-radius:var(--radius);box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:10px;border-left:3px solid var(--info)">
+          <i class="fas fa-list" style="color:var(--info);font-size:1.1rem"></i>
+          <div><div style="font-size:.7rem;color:var(--text-muted)">Jumlah Transaksi</div>
+          <div style="font-weight:800;color:var(--info);font-size:.95rem"><?= $summary['cnt'] ?> transaksi</div></div>
         </div>
       </div>
-      
-      <form method="GET" style="display:flex;align-items:center;gap:10px">
-        <label style="font-size:.85rem;font-weight:600;color:var(--text-secondary)"><i class="fas fa-filter"></i> Bulan:</label>
-        <input type="month" name="bulan" value="<?= $filter_bulan ?>" class="form-control" style="width:160px" onchange="this.form.submit()">
+      <form method="GET" style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:.82rem;font-weight:600;color:var(--text-secondary);white-space:nowrap"><i class="fas fa-filter"></i> Bulan:</label>
+        <input type="month" name="bulan" value="<?= $filter_bulan ?>" class="form-control" style="width:150px" onchange="this.form.submit()">
       </form>
     </div>
 
-    <!-- Tabel -->
-    <div class="table-wrapper animate-fadeIn">
+    <!-- Tabel (Desktop) -->
+    <div class="table-wrapper animate-fadeIn table-wrapper-desktop">
       <table class="table table-striped">
         <thead>
           <tr><th>#</th><th>Tanggal</th><th>Keterangan</th><th>Kategori</th><th class="text-right">Jumlah (Rp)</th><th style="width:90px">Aksi</th></tr>
         </thead>
         <tbody>
-          <?php if ($rows->num_rows): 
+          <?php
+          $rows_data = [];
+          if ($rows->num_rows):
             $no = $offset + 1;
-            while ($r = $rows->fetch_assoc()): ?>
+            while ($r = $rows->fetch_assoc()):
+              $rows_data[] = $r;
+          ?>
           <tr>
             <td class="text-muted"><?= $no++ ?></td>
-            <td><?= date('d M Y', strtotime($r['tanggal'])) ?></td>
+            <td style="white-space:nowrap"><?= date('d M Y', strtotime($r['tanggal'])) ?></td>
             <td><?= htmlspecialchars($r['keterangan']) ?></td>
             <td><span class="badge badge-success"><?= htmlspecialchars($r['nama_kategori']) ?></span></td>
             <td class="text-right fw-600 text-success">+ <?= number_format($r['jumlah'],0,',','.') ?></td>
             <td>
               <div style="display:flex;gap:6px">
-                <a href="?edit=<?= $r['id'] ?>" class="btn btn-ghost btn-icon btn-sm" data-tooltip="Edit"><i class="fas fa-edit"></i></a>
-                <button onclick="confirmDelete(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['keterangan'])) ?>')" 
+                <a href="?edit=<?= $r['id'] ?>&bulan=<?= $filter_bulan ?>" class="btn btn-ghost btn-icon btn-sm" data-tooltip="Edit"><i class="fas fa-edit"></i></a>
+                <button onclick="confirmDelete(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['keterangan'])) ?>')"
                         class="btn btn-icon btn-sm" style="background:rgba(239,68,68,.1);color:var(--danger)" data-tooltip="Hapus">
                   <i class="fas fa-trash"></i>
                 </button>
               </div>
             </td>
           </tr>
-          <?php endwhile; 
+          <?php endwhile;
           else: ?>
           <tr><td colspan="6"><div class="empty-state"><div class="es-icon"><i class="fas fa-inbox"></i></div><h3>Belum ada data kas masuk</h3><p>Tambahkan data menggunakan form di atas</p></div></td></tr>
           <?php endif; ?>
         </tbody>
-        <?php if ($rows->num_rows): ?>
+        <?php if (!empty($rows_data)): ?>
         <tfoot>
-          <tr>
-            <td colspan="4" class="text-right">Total:</td>
-            <td class="text-right text-success">+ <?= number_format($summary['total'],0,',','.') ?></td>
-            <td></td>
-          </tr>
+          <tr><td colspan="4" class="text-right">Total:</td><td class="text-right text-success fw-600">+ <?= number_format($summary['total'],0,',','.') ?></td><td></td></tr>
         </tfoot>
         <?php endif; ?>
       </table>
+    </div>
+
+    <!-- Card List (Mobile) -->
+    <div class="trx-mobile-card animate-fadeIn">
+      <?php if (!empty($rows_data)): foreach ($rows_data as $r): ?>
+      <div class="trx-m-item">
+        <div class="trx-m-icon" style="background:rgba(16,185,129,.1);color:var(--success)">
+          <i class="fas fa-arrow-down"></i>
+        </div>
+        <div class="trx-m-body">
+          <div class="trx-m-name"><?= htmlspecialchars($r['keterangan']) ?></div>
+          <div class="trx-m-meta">
+            <span><i class="fas fa-calendar-alt"></i> <?= date('d M Y', strtotime($r['tanggal'])) ?></span>
+            <span class="badge badge-success" style="font-size:.65rem;padding:2px 7px"><?= htmlspecialchars($r['nama_kategori']) ?></span>
+          </div>
+        </div>
+        <div class="trx-m-right">
+          <div class="trx-m-amount text-success">+Rp <?= number_format($r['jumlah'],0,',','.') ?></div>
+          <div class="trx-m-actions">
+            <a href="?edit=<?= $r['id'] ?>&bulan=<?= $filter_bulan ?>" class="btn btn-ghost btn-icon btn-sm"><i class="fas fa-edit"></i></a>
+            <button onclick="confirmDelete(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['keterangan'])) ?>')"
+                    class="btn btn-icon btn-sm" style="background:rgba(239,68,68,.1);color:var(--danger)">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <?php endforeach; else: ?>
+      <div class="empty-state"><div class="es-icon"><i class="fas fa-inbox"></i></div><h3>Belum ada data kas masuk</h3></div>
+      <?php endif; ?>
     </div>
 
     <!-- Pagination -->
