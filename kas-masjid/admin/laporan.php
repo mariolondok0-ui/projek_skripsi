@@ -42,9 +42,9 @@ $sum = $conn->query("
     FROM transaksi t WHERE $where_sql
 ")->fetch_assoc();
 
-// Periode label untuk header PDF
+// Periode label untuk header PDF dan Tag Filter (DIPERBARUI DENGAN TANGGAL)
 $periode_label = match($filter_periode) {
-    'bulan'  => 'Bulan ' . date('F Y', strtotime($filter_bulan . '-01')),
+    'bulan'  => date('01 F Y', strtotime($filter_bulan . '-01')) . ' s/d ' . date('t F Y', strtotime($filter_bulan . '-01')),
     'tahun'  => 'Tahun ' . $filter_tahun,
     'hari'   => 'Hari Ini, ' . date('d F Y'),
     'minggu' => '7 Hari Terakhir',
@@ -276,10 +276,115 @@ endif;
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Laporan <?= APP_NAME ?></title>
 <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=2026">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+/* =========================================================
+   TAMBAHAN CSS RESPONSIVE AGRESIF UNTUK HP (HALAMAN LAPORAN)
+   ========================================================= */
+.table-wrapper {
+    display: block !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 12px;
+}
+
+@media (max-width: 768px) {
+    /* Mencegah layar geser kanan-kiri yang tidak disengaja */
+    html, body { overflow-x: hidden !important; max-width: 100vw !important; }
+    
+    .admin-wrapper { display: block !important; width: 100% !important; overflow-x: hidden !important; }
+    .admin-main { width: 100% !important; margin-left: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
+    
+    /* Padding utama dibuat pas */
+    .admin-content { width: 100% !important; padding: 12px !important; box-sizing: border-box !important; margin: 0 !important; }
+    .topbar { width: 100% !important; box-sizing: border-box !important; padding: 12px 15px !important; }
+    .t-name { display: none !important; }
+
+    /* Merapikan Header & Tombol */
+    .page-header > div { 
+        flex-direction: column !important; 
+        align-items: stretch !important; 
+        gap: 15px !important; 
+        text-align: center; 
+    }
+    
+    /* PERBAIKAN TOMBOL AGAR SEJAJAR KIRI & KANAN */
+    .page-header > div > div:last-child { 
+        display: flex !important;
+        flex-direction: row !important; /* Memaksa agar tampil sejajar menyamping */
+        width: 100% !important; 
+        gap: 10px !important;
+    }
+    
+    .page-header a.btn { 
+        flex: 1 !important; /* Tombol berbagi ruang seimbang 50:50 */
+        justify-content: center !important; 
+        align-items: center !important;
+        display: inline-flex !important;
+        padding: 10px 5px !important;
+        font-size: 0.8rem !important; /* Diperkecil sedikit agar teks cukup */
+        white-space: nowrap !important; /* Mencegah teks terpotong ke bawah */
+    }
+    
+    .page-title { font-size: 1.35rem !important; margin-bottom: 4px !important; }
+    .page-subtitle { font-size: 0.85rem !important; margin-bottom: 5px !important; }
+
+    /* 4 Kotak Stat Atas (Diubah jadi 2x2 Kolom) */
+    .grid-4 { 
+        display: grid !important; 
+        grid-template-columns: repeat(2, 1fr) !important; 
+        gap: 12px !important; 
+        width: 100% !important; 
+    }
+    .stat-card { 
+        padding: 15px 12px !important; 
+        border-radius: 12px !important; 
+        width: auto !important; 
+        margin: 0 !important; 
+    }
+    .stat-label { font-size: 0.72rem !important; }
+    .stat-value { font-size: 1.05rem !important; margin: 4px 0 !important; }
+
+    /* Merapikan Filter Bar (Dropdown ke bawah) */
+    .filter-bar { 
+        display: flex !important; 
+        flex-direction: column !important; 
+        padding: 15px !important; 
+        border-radius: 12px !important; 
+        gap: 12px !important; 
+        text-align: center; 
+    }
+    #filterForm { 
+        display: flex !important; 
+        flex-direction: column !important; 
+        gap: 10px !important; 
+        width: 100% !important; 
+    }
+    .filter-bar .form-control { 
+        width: 100% !important; 
+        box-sizing: border-box !important; 
+    }
+    
+    /* Tabel Laporan (Dipaksa lebar supaya bisa digeser ke samping) */
+    .table-wrapper table { 
+        min-width: 800px !important; 
+    }
+    .table th, .table td { 
+        padding: 10px 8px !important; 
+        font-size: 0.85rem !important; 
+    }
+}
+
+/* Penyesuaian Tablet */
+@media (min-width: 576px) and (max-width: 991px) {
+    .grid-4 { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 15px !important; }
+}
+/* ========================================================= */
+</style>
 </head>
 <body>
 <div class="admin-wrapper">
@@ -311,8 +416,8 @@ endif;
           <p class="page-subtitle">Filter, cetak, dan ekspor laporan keuangan kas masjid</p>
         </div>
         
-        <!-- Tombol Kembali dan Cetak/PDF yang sudah disatukan -->
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <!-- Tombol Kembali dan Cetak/PDF yang sejajar Kiri-Kanan di Mobile -->
+        <div style="display:flex; gap:10px; flex-wrap:wrap; width: 100%;">
           <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn btn-ghost" style="border:1.5px solid var(--border);background:var(--bg-card)">
             <i class="fas fa-arrow-left"></i> Kembali
           </a>
@@ -373,7 +478,7 @@ endif;
           <input type="date" name="dari" value="<?= $tgl_dari ?>" class="form-control">
           <span style="font-size:.85rem;color:var(--text-muted)">s/d</span>
           <input type="date" name="sampai" value="<?= $tgl_sampai ?>" class="form-control">
-          <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i></button>
+          <button type="submit" class="btn btn-primary btn-sm" style="padding: 10px; width: 100%;"><i class="fas fa-search"></i> Cari Rentang</button>
         <?php endif; ?>
         
         <select name="jenis" class="form-control form-select" onchange="this.form.submit()">
@@ -381,7 +486,7 @@ endif;
           <option value="masuk"  <?= $filter_jenis=='masuk'?'selected':'' ?>>Kas Masuk</option>
           <option value="keluar" <?= $filter_jenis=='keluar'?'selected':'' ?>>Kas Keluar</option>
         </select>
-        <span style="font-size:.8rem;color:var(--text-muted);white-space:nowrap;background:var(--bg-main);padding:6px 12px;border-radius:var(--radius-sm)">
+        <span style="font-size:.8rem;color:var(--text-muted);white-space:nowrap;background:var(--bg-main);padding:8px 12px;border-radius:var(--radius-sm)">
           <i class="fas fa-tag"></i> <?= $periode_label ?>
         </span>
       </form>
@@ -408,15 +513,15 @@ endif;
           if (count($all_rows)): foreach ($all_rows as $r): ?>
           <tr>
             <td class="text-center text-muted"><?= $no++ ?></td>
-            <td class="text-left"><?= date('d M Y', strtotime($r['tanggal'])) ?></td>
+            <td class="text-left" style="white-space: nowrap;"><?= date('d M Y', strtotime($r['tanggal'])) ?></td>
             <td class="text-left"><?= htmlspecialchars($r['keterangan']) ?></td>
             <td class="text-left"><span class="badge badge-primary"><?= htmlspecialchars($r['nama_kategori']) ?></span></td>
-            <td class="text-center">
+            <td class="text-center" style="white-space: nowrap;">
               <?= $r['jenis']=='masuk'
                 ? '<span class="badge badge-success"><i class="fas fa-arrow-down"></i> Masuk</span>'
                 : '<span class="badge badge-danger"><i class="fas fa-arrow-up"></i> Keluar</span>' ?>
             </td>
-            <td class="text-right fw-600 <?= $r['jenis']=='masuk'?'text-success':'text-danger' ?>">
+            <td class="text-right fw-600 <?= $r['jenis']=='masuk'?'text-success':'text-danger' ?>" style="white-space: nowrap;">
               <?= ($r['jenis']=='masuk'?'+':'-') . ' ' . number_format($r['jumlah'],0,',','.') ?>
             </td>
             <td class="text-left text-muted" style="font-size:.8rem"><?= htmlspecialchars($r['nama_user']) ?></td>
@@ -427,10 +532,10 @@ endif;
         </tbody>
         <?php if (count($all_rows)): ?>
         <tfoot>
-          <tr><td colspan="5" class="text-right">Total Pemasukan:</td><td class="text-right text-success fw-600">+ <?= number_format($sum['total_masuk'],0,',','.') ?></td><td></td></tr>
-          <tr><td colspan="5" class="text-right">Total Pengeluaran:</td><td class="text-right text-danger fw-600">- <?= number_format($sum['total_keluar'],0,',','.') ?></td><td></td></tr>
+          <tr><td colspan="5" class="text-right">Total Pemasukan:</td><td class="text-right text-success fw-600" style="white-space: nowrap;">+ <?= number_format($sum['total_masuk'],0,',','.') ?></td><td></td></tr>
+          <tr><td colspan="5" class="text-right">Total Pengeluaran:</td><td class="text-right text-danger fw-600" style="white-space: nowrap;">- <?= number_format($sum['total_keluar'],0,',','.') ?></td><td></td></tr>
           <tr><td colspan="5" class="text-right fw-700">Saldo:</td>
-            <td class="text-right fw-700 <?= ($sum['total_masuk']-$sum['total_keluar'])>=0?'text-success':'text-danger' ?>">
+            <td class="text-right fw-700 <?= ($sum['total_masuk']-$sum['total_keluar'])>=0?'text-success':'text-danger' ?>" style="white-space: nowrap;">
               <?= formatRupiah($sum['total_masuk']-$sum['total_keluar']) ?>
             </td><td></td></tr>
         </tfoot>

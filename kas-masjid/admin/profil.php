@@ -7,23 +7,57 @@ $admin    = $conn->query("SELECT * FROM users WHERE id=$admin_id")->fetch_assoc(
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nama  = sanitize($_POST['nama']  ?? '');
-    $email = sanitize($_POST['email'] ?? '');
-    if (empty($nama) || empty($email)) {
-        setAlert('danger', 'Nama dan email wajib diisi.');
+    
+    if (empty($nama)) {
+        setAlert('danger', 'Nama wajib diisi.');
     } else {
-        $cek = $conn->query("SELECT id FROM users WHERE email='$email' AND id!=$admin_id")->fetch_assoc();
-        if ($cek) {
-            setAlert('danger', 'Email sudah digunakan akun lain.');
-        } else {
-            $stmt = $conn->prepare("UPDATE users SET nama=?, email=? WHERE id=?");
-            $stmt->bind_param('ssi', $nama, $email, $admin_id);
-            $stmt->execute();
-            $_SESSION['admin_nama']  = $nama;
-            $_SESSION['admin_email'] = $email;
-            setAlert('success', 'Profil berhasil diperbarui.');
+        $foto_nama = $admin['foto_profil']; // Ambil nama foto lama
+        
+        // Cek apakah ada file foto yang di-upload
+        if (isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
+            $tmp_name = $_FILES['foto']['tmp_name'];
+            $file_name = $_FILES['foto']['name'];
+            $file_size = $_FILES['foto']['size'];
+            $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+            $allowed_ext = ['jpg', 'jpeg', 'png'];
+
+            // Validasi format dan ukuran (Max 2MB)
+            if (!in_array($file_ext, $allowed_ext)) {
+                setAlert('danger', 'Format foto tidak valid (hanya JPG/PNG).');
+                redirect(APP_URL.'/admin/profil.php');
+                exit;
+            } elseif ($file_size > 2097152) { 
+                setAlert('danger', 'Ukuran foto maksimal 2MB.');
+                redirect(APP_URL.'/admin/profil.php');
+                exit;
+            } else {
+                // Pastikan folder uploads tersedia
+                $upload_dir = '../assets/uploads/';
+                if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+
+                // Hapus foto lama jika ada (agar server tidak penuh)
+                if (!empty($admin['foto_profil']) && file_exists($upload_dir . $admin['foto_profil'])) {
+                    unlink($upload_dir . $admin['foto_profil']);
+                }
+
+                // Generate nama unik dan pindahkan file
+                $new_file_name = 'profil_' . $admin_id . '_' . time() . '.' . $file_ext;
+                if (move_uploaded_file($tmp_name, $upload_dir . $new_file_name)) {
+                    $foto_nama = $new_file_name;
+                }
+            }
         }
+
+        // Simpan perubahan ke database
+        $stmt = $conn->prepare("UPDATE users SET nama=?, foto_profil=? WHERE id=?");
+        $stmt->bind_param('ssi', $nama, $foto_nama, $admin_id);
+        $stmt->execute();
+        
+        $_SESSION['admin_nama'] = $nama; // Update session nama
+        setAlert('success', 'Profil berhasil diperbarui.');
     }
     redirect(APP_URL.'/admin/profil.php');
+    exit;
 }
 
 $total_input = (int)$conn->query("SELECT COUNT(*) as c FROM transaksi WHERE user_id=$admin_id")->fetch_assoc()['c'];
@@ -65,6 +99,13 @@ $alert       = getAlert();
   background: rgba(201,168,76,.12);
   border-radius: 50%;
 }
+
+/* Penyesuaian Wrapper Avatar agar icon kamera bisa diposisikan pas */
+.avatar-wrapper {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
 .profile-avatar {
   width: 80px; height: 80px;
   border-radius: 50%;
@@ -72,9 +113,43 @@ $alert       = getAlert();
   border: 3px solid rgba(255,255,255,.4);
   display: flex; align-items: center; justify-content: center;
   font-size: 2rem; font-weight: 800; color: #fff;
-  flex-shrink: 0;
   backdrop-filter: blur(8px);
+  overflow: hidden;
+  cursor: pointer; /* Kursor pointer agar tahu bisa diklik */
+  transition: transform 0.2s;
 }
+.profile-avatar:hover {
+  transform: scale(1.03);
+}
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Tombol Edit / Kamera menempel di foto */
+.btn-edit-avatar {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  background: #ffffff;
+  color: #1a7a4a;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  border: 2px solid #1a7a4a;
+  transition: transform 0.2s ease, background 0.2s;
+  z-index: 10;
+}
+.btn-edit-avatar:hover {
+  transform: scale(1.1);
+  background: #f0fdf4;
+}
+
 .profile-stat {
   background: rgba(255,255,255,.12);
   border: 1px solid rgba(255,255,255,.2);
@@ -113,9 +188,38 @@ $alert       = getAlert();
 .form-card-header h3 { font-size: .9rem; font-weight: 700; color: var(--text-primary); }
 .form-card-body { padding: 22px; }
 
+/* Modal Lihat Foto */
+.foto-modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.85); z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; visibility: hidden; transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+.foto-modal-overlay.active {
+  opacity: 1; visibility: visible;
+}
+.foto-modal-img {
+  max-width: 90%; max-height: 90%; border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  transform: scale(0.8); transition: transform 0.3s ease;
+  border: 4px solid #fff;
+}
+.foto-modal-overlay.active .foto-modal-img {
+  transform: scale(1);
+}
+.foto-modal-close {
+  position: absolute; top: 20px; right: 20px;
+  color: #fff; font-size: 2rem; cursor: pointer;
+  background: none; border: none; padding: 10px;
+  transition: color 0.2s;
+}
+.foto-modal-close:hover { color: #f87171; }
+
 @media (max-width: 640px) {
   .profile-hero { padding: 24px 18px; }
   .profile-avatar { width: 64px; height: 64px; font-size: 1.6rem; }
+  .btn-edit-avatar { width: 24px; height: 24px; font-size: 0.7rem; }
   .profile-stat .ps-val { font-size: 1rem; }
 }
 </style>
@@ -155,7 +259,22 @@ $alert       = getAlert();
     <div class="profile-hero animate-fadeIn">
       <div style="position:relative;z-index:1">
         <div style="display:flex;align-items:center;gap:18px;margin-bottom:24px;flex-wrap:wrap">
-          <div class="profile-avatar"><?= strtoupper(substr($admin['nama'],0,1)) ?></div>
+          
+          <!-- FOTO PROFIL DENGAN ICON KAMERA -->
+          <div class="avatar-wrapper">
+            <div class="profile-avatar" id="avatarContainer" onclick="lihatFotoProfil()">
+              <?php if (!empty($admin['foto_profil']) && file_exists('../assets/uploads/' . $admin['foto_profil'])): ?>
+                  <img src="<?= APP_URL ?>/assets/uploads/<?= htmlspecialchars($admin['foto_profil']) ?>" alt="Avatar">
+              <?php else: ?>
+                  <?= strtoupper(substr($admin['nama'],0,1)) ?>
+              <?php endif; ?>
+            </div>
+            <!-- Tombol Kamera (memicu input file hidden) -->
+            <div class="btn-edit-avatar" onclick="document.getElementById('uploadFoto').click()" title="Ubah Foto Profil">
+              <i class="fas fa-camera"></i>
+            </div>
+          </div>
+
           <div>
             <div style="font-size:1.2rem;font-weight:800;line-height:1.3"><?= htmlspecialchars($admin['nama']) ?></div>
             <div style="font-size:.82rem;opacity:.8;margin-top:3px"><i class="fas fa-envelope" style="margin-right:5px"></i><?= htmlspecialchars($admin['email']) ?></div>
@@ -189,8 +308,12 @@ $alert       = getAlert();
         </div>
       </div>
       <div class="form-card-body">
-        <form method="POST">
-          <div class="form-group">
+        <form method="POST" enctype="multipart/form-data">
+          
+          <!-- INPUT FILE DISEMBUNYIKAN DI SINI -->
+          <input type="file" name="foto" id="uploadFoto" accept="image/png, image/jpeg, image/jpg" style="display:none;">
+
+          <div class="form-group" style="margin-bottom:24px">
             <label class="form-label">Nama Lengkap <span class="required">*</span></label>
             <div class="input-group">
               <i class="fas fa-user input-icon"></i>
@@ -199,15 +322,7 @@ $alert       = getAlert();
                      placeholder="Masukkan nama lengkap" required>
             </div>
           </div>
-          <div class="form-group" style="margin-bottom:24px">
-            <label class="form-label">Alamat Email <span class="required">*</span></label>
-            <div class="input-group">
-              <i class="fas fa-envelope input-icon"></i>
-              <input type="email" name="email" class="form-control"
-                     value="<?= htmlspecialchars($admin['email']) ?>"
-                     placeholder="Masukkan email" required>
-            </div>
-          </div>
+          
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center">
               <i class="fas fa-save"></i> Simpan Perubahan
@@ -226,7 +341,46 @@ $alert       = getAlert();
 </div>
 </div>
 
+<!-- Modal Lihat Foto Full -->
+<div class="foto-modal-overlay" id="modalLihatFoto">
+  <button class="foto-modal-close" onclick="closeFotoModal()"><i class="fas fa-times"></i></button>
+  <img src="" class="foto-modal-img" id="imgModalPreview" alt="Foto Profil Full">
+</div>
+
 <script>
+// Fungsi Lihat Foto Besar
+function lihatFotoProfil() {
+    const avatarContainer = document.getElementById('avatarContainer');
+    const imgElement = avatarContainer.querySelector('img');
+    
+    // Hanya buka modal jika ada tag gambar
+    if (imgElement) {
+        document.getElementById('imgModalPreview').src = imgElement.src;
+        document.getElementById('modalLihatFoto').classList.add('active');
+    }
+}
+function closeFotoModal() {
+    document.getElementById('modalLihatFoto').classList.remove('active');
+}
+// Tutup modal jika klik di luar gambar
+document.getElementById('modalLihatFoto').addEventListener('click', function(e) {
+    if (e.target === this) closeFotoModal();
+});
+// Tutup modal dengan tombol Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeFotoModal(); });
+
+// Live Preview Gambar saat dipilih dari file manager
+document.getElementById('uploadFoto').addEventListener('change', function(e) {
+    if (this.files && this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('avatarContainer').innerHTML = '<img src="' + e.target.result + '" alt="Avatar">';
+        }
+        reader.readAsDataURL(this.files[0]);
+    }
+});
+
+// Sidebar logic
 const sidebar=document.getElementById('adminSidebar');
 const overlay=document.getElementById('sidebarOverlay');
 document.getElementById('sidebarToggle').addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('active');});

@@ -37,18 +37,23 @@ $filter_jenis = sanitize($_GET['jenis'] ?? 'semua');
 $page         = max(1, (int)($_GET['page'] ?? 1));
 $per_page     = 12;
 
-$where = "deleted_at IS NOT NULL";
-if ($filter_jenis !== 'semua') $where .= " AND jenis='" . sanitize($filter_jenis) . "'";
+// PERBAIKAN ERROR AMBIGUOUS: Tambahkan inisial "t." di depan nama kolom
+$where = "t.deleted_at IS NOT NULL";
+if ($filter_jenis !== 'semua') {
+    $where .= " AND t.jenis='" . sanitize($filter_jenis) . "'";
+}
 
-$total_rows  = $conn->query("SELECT COUNT(*) as c FROM transaksi WHERE $where")->fetch_assoc()['c'];
+// PERBAIKAN: Tambahkan alias "t" pada tabel transaksi di query COUNT
+$total_rows  = $conn->query("SELECT COUNT(*) as c FROM transaksi t WHERE $where")->fetch_assoc()['c'];
 $total_pages = max(1, ceil($total_rows / $per_page));
 $offset      = ($page - 1) * $per_page;
 
+// PERBAIKAN: WHERE dipanggil langsung karena inisial "t." sudah ada di variabel string $where
 $rows = $conn->query("
     SELECT t.*, k.nama_kategori
     FROM transaksi t
     JOIN kategori k ON t.kategori_id = k.id
-    WHERE t.$where
+    WHERE $where
     ORDER BY t.deleted_at DESC
     LIMIT $per_page OFFSET $offset
 ");
@@ -64,10 +69,151 @@ $alert = getAlert();
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Tempat Sampah – <?= APP_NAME ?></title>
 <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=2026">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+/* =========================================================
+   TAMBAHAN CSS RESPONSIVE AGRESIF UNTUK HP (TEMPAT SAMPAH)
+   ========================================================= */
+.table-wrapper {
+    display: block !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 12px;
+}
+
+/* PERBAIKAN TOTAL UNTUK KOTAK SELECT (DROPDOWN) AGAR ELEGAN */
+select.form-select {
+    font-family: 'Segoe UI', 'Poppins', Tahoma, Geneva, Verdana, sans-serif !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+    color: #1f2937 !important;
+    padding: 12px 16px !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+    background-color: #f9fafb !important;
+    appearance: none !important; /* Menghilangkan panah jelek bawaan browser */
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    /* Membuat panah custom yang rapi */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 14px center !important;
+    background-size: 18px !important;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
+    transition: all 0.2s ease;
+}
+select.form-select:focus {
+    border-color: #1a7a4a !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(26,122,74,0.15) !important;
+    background-color: #ffffff !important;
+}
+select.form-select option {
+    font-family: 'Segoe UI', 'Poppins', sans-serif !important;
+    font-weight: 500 !important;
+    color: #333 !important;
+    padding: 10px !important;
+}
+
+@media (max-width: 768px) {
+    html, body { overflow-x: hidden !important; max-width: 100vw !important; }
+    
+    .admin-wrapper { display: block !important; width: 100% !important; overflow-x: hidden !important; }
+    .admin-main { width: 100% !important; margin-left: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
+    
+    .admin-content { width: 100% !important; padding: 12px !important; box-sizing: border-box !important; margin: 0 !important; }
+    .topbar { width: 100% !important; box-sizing: border-box !important; padding: 12px 15px !important; }
+    .t-name { display: none !important; }
+
+    /* Merapikan Header & Tombol */
+    .page-header > div { 
+        flex-direction: column !important; 
+        align-items: flex-start !important; 
+        gap: 15px !important; 
+        text-align: left !important; 
+    }
+    
+    .page-header a.btn { 
+        width: 100% !important;
+        justify-content: center !important; 
+        align-items: center !important;
+        display: inline-flex !important;
+        padding: 12px !important;
+        background: var(--bg-card) !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.04) !important; 
+        border-radius: 8px !important;
+    }
+    
+    .page-title { font-size: 1.35rem !important; margin-bottom: 4px !important; }
+    .page-subtitle { font-size: 0.85rem !important; margin-bottom: 5px !important; line-height: 1.5 !important; }
+
+    /* 3 Kotak Stat Atas (Total Lebar Penuh, Sisanya Berbagi 50:50) */
+    .grid-3 { 
+        display: grid !important; 
+        grid-template-columns: repeat(2, 1fr) !important; 
+        gap: 12px !important; 
+        width: 100% !important; 
+    }
+    .grid-3 > div:first-child { grid-column: span 2 !important; }
+    .stat-card { padding: 15px 12px !important; border-radius: 12px !important; width: auto !important; margin: 0 !important; }
+    .stat-label { font-size: 0.72rem !important; }
+    .stat-value { font-size: 1.05rem !important; margin: 4px 0 !important; }
+    .stat-sub { font-size: 0.7rem !important; }
+
+    /* Merapikan Info Banner Peringatan */
+    .info-banner {
+        flex-direction: column !important;
+        text-align: left !important; 
+        gap: 15px !important;
+        padding: 15px !important;
+    }
+    .info-banner > div:first-child {
+        flex-direction: row !important; 
+        justify-content: flex-start !important;
+        text-align: left !important;
+    }
+    .info-banner > div:last-child {
+        width: 100% !important;
+        flex-direction: column !important; 
+        gap: 10px !important;
+    }
+    .info-banner .btn {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    /* Merapikan Filter Bar (Dropdown) */
+    .filter-bar { 
+        flex-direction: column !important; 
+        padding: 15px !important; 
+        border-radius: 12px !important; 
+        gap: 12px !important; 
+        text-align: left !important; 
+        align-items: stretch !important;
+    }
+    .filter-bar form { 
+        flex-direction: column !important; 
+        gap: 10px !important; 
+        width: 100% !important; 
+        align-items: stretch !important;
+    }
+    .filter-bar .form-control { 
+        width: 100% !important; 
+        max-width: none !important;
+        box-sizing: border-box !important; 
+    }
+    
+    /* Tabel (Dipaksa lebar supaya bisa digeser ke samping) */
+    .table-wrapper table { min-width: 800px !important; }
+    .table th, .table td { padding: 10px 8px !important; font-size: 0.85rem !important; }
+}
+/* ========================================================= */
+</style>
 </head>
 <body>
 <div class="admin-wrapper">
@@ -98,18 +244,26 @@ $alert = getAlert();
     <?php endif; ?>
 
     <!-- PAGE HEADER -->
-    <div class="page-header">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-        <div>
-          <h1 class="page-title">
-            <i class="fas fa-trash-alt" style="color:var(--danger)"></i> Tempat Sampah
-          </h1>
-          <p class="page-subtitle">Data yang dihapus tersimpan di sini — bisa dipulihkan atau dihapus permanen</p>
+    <div style="margin-bottom:24px; padding-bottom:16px; border-bottom:1px dashed var(--border-light);">
+      
+      <!-- Baris Atas: Judul & Tombol -->
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:15px; margin-bottom:8px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:36px; height:36px; background:rgba(239,68,68,0.1); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--danger); font-size:1.1rem; flex-shrink:0;">
+            <i class="fas fa-trash-alt"></i>
+          </div>
+          <h1 style="font-size:1.25rem; font-weight:800; color:var(--text-primary); margin:0;">Tempat Sampah</h1>
         </div>
-        <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn btn-ghost">
+        <a href="<?= APP_URL ?>/admin/dashboard.php" style="flex-shrink:0; background:var(--bg-main); border:1px solid var(--border-light); padding:8px 14px; border-radius:8px; box-shadow:0 1px 2px rgba(0,0,0,0.05); color:var(--text-primary); text-decoration:none; display:flex; align-items:center; gap:6px; font-size:0.85rem; font-weight:600; transition:all 0.2s;">
           <i class="fas fa-arrow-left"></i> Kembali
         </a>
       </div>
+
+      <!-- Baris Bawah: Deskripsi -->
+      <p style="font-size:0.82rem; color:var(--text-muted); margin:0; line-height:1.5;">
+        Data yang dihapus tersimpan di sini — bisa dipulihkan atau dihapus permanen
+      </p>
+      
     </div>
 
     <!-- STAT CARDS -->
@@ -136,7 +290,7 @@ $alert = getAlert();
 
     <!-- INFO BANNER -->
     <?php if ($jml_total > 0): ?>
-    <div style="background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(245,158,11,.08));border:1px solid rgba(239,68,68,.2);border-radius:var(--radius-lg);padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div class="info-banner" style="background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(245,158,11,.08));border:1px solid rgba(239,68,68,.2);border-radius:var(--radius-lg);padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
       <div style="display:flex;align-items:center;gap:10px">
         <i class="fas fa-exclamation-triangle" style="color:var(--warning);font-size:1.2rem"></i>
         <div>
@@ -184,12 +338,12 @@ $alert = getAlert();
         <thead>
           <tr>
             <th>#</th>
-            <th>Tanggal</th>
+            <th style="white-space:nowrap;">Tanggal</th>
             <th>Keterangan</th>
             <th>Kategori</th>
             <th>Jenis</th>
             <th class="text-right">Jumlah (Rp)</th>
-            <th>Dihapus Pada</th>
+            <th style="white-space:nowrap;">Dihapus Pada</th>
             <th style="text-align:center;width:120px">Aksi</th>
           </tr>
         </thead>
@@ -199,23 +353,23 @@ $alert = getAlert();
             while ($r = $rows->fetch_assoc()): ?>
           <tr style="opacity:.85">
             <td class="text-muted"><?= $no++ ?></td>
-            <td><?= date('d M Y', strtotime($r['tanggal'])) ?></td>
+            <td style="white-space:nowrap;"><?= date('d M Y', strtotime($r['tanggal'])) ?></td>
             <td>
               <span style="text-decoration:line-through;color:var(--text-muted)">
                 <?= htmlspecialchars($r['keterangan']) ?>
               </span>
             </td>
-            <td><span class="badge badge-primary"><?= htmlspecialchars($r['nama_kategori']) ?></span></td>
-            <td>
+            <td><span class="badge badge-primary" style="white-space:nowrap;"><?= htmlspecialchars($r['nama_kategori']) ?></span></td>
+            <td style="white-space:nowrap;">
               <?= $r['jenis']=='masuk'
                 ? '<span class="badge badge-success"><i class="fas fa-arrow-down"></i> Masuk</span>'
                 : '<span class="badge badge-danger"><i class="fas fa-arrow-up"></i> Keluar</span>' ?>
             </td>
             <td class="text-right fw-600 <?= $r['jenis']=='masuk'?'text-success':'text-danger' ?>"
-                style="text-decoration:line-through;opacity:.7">
+                style="text-decoration:line-through;opacity:.7;white-space:nowrap;">
               <?= ($r['jenis']=='masuk'?'+':'-') . formatRupiah($r['jumlah']) ?>
             </td>
-            <td style="font-size:.78rem;color:var(--text-muted)">
+            <td style="font-size:.78rem;color:var(--text-muted);white-space:nowrap;">
               <i class="fas fa-clock"></i>
               <?= date('d M Y H:i', strtotime($r['deleted_at'])) ?>
             </td>

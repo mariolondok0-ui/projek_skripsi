@@ -53,7 +53,7 @@ $alert = getAlert();
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Dashboard – <?= APP_NAME ?></title>
 <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=2026">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -70,6 +70,143 @@ $alert = getAlert();
 .slide-nav-btn:hover{background:var(--primary);border-color:var(--primary);color:#fff}
 .pie-legend-item{display:flex;align-items:center;gap:8px}
 .pie-legend-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0;display:inline-block}
+
+/* =========================================================
+   TAMBAHAN CSS RESPONSIVE AGRESIF UNTUK HP (SUPER REFINED)
+   ========================================================= */
+.table-responsive {
+    display: block !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+@media (max-width: 768px) {
+    /* Mencegah layar geser kanan-kiri yang tidak disengaja */
+    html, body {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+    }
+
+    .admin-wrapper {
+        display: block !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
+    }
+    
+    .admin-main {
+        width: 100% !important;
+        margin-left: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Merapikan padding utama agar lega */
+    .admin-content {
+        width: 100% !important;
+        padding: 12px !important; 
+        box-sizing: border-box !important;
+        margin: 0 !important;
+    }
+
+    /* Tipografi hirarki header */
+    .page-title {
+        font-size: 1.35rem !important;
+        margin-bottom: 4px !important;
+    }
+    .page-subtitle {
+        font-size: 0.85rem !important;
+        margin-bottom: 15px !important;
+    }
+
+    .topbar {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 12px 15px !important;
+    }
+
+    /* 4 Kotak Stat Atas dijadikan 2 Kolom (Kotak kecil rapi) */
+    .grid-4 {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+        width: 100% !important;
+    }
+    
+    .stat-card {
+        padding: 15px 12px !important;
+        border-radius: 12px !important;
+    }
+    .stat-label { font-size: 0.72rem !important; }
+    .stat-value { font-size: 1.05rem !important; margin: 4px 0 !important; }
+    
+    /* Layout Banner Ringkasan Bulan Ini (Yang bermasalah di SS) */
+    .banner-header {
+        flex-direction: column !important;
+        text-align: center !important;
+        gap: 15px !important;
+    }
+    .banner-stats {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important; /* Kiri Kanan */
+        gap: 15px !important;
+        width: 100% !important;
+    }
+    .banner-sep {
+        display: none !important; /* Hapus garis vertikal yang nyasar */
+    }
+    .selisih-box {
+        grid-column: span 2 !important; /* Paksa menempati 2 kolom di bawahnya */
+        padding-top: 15px !important;
+        border-top: 1px dashed rgba(255,255,255,0.3) !important; /* Garis horizontal baru */
+    }
+    .banner-actions {
+        justify-content: center !important;
+        width: 100% !important;
+        margin-top: 5px !important;
+    }
+
+    /* Layout Card & Table */
+    .card {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        border-radius: 12px !important; 
+    }
+    
+    .table-responsive .table {
+        min-width: 650px !important; 
+    }
+    
+    .table th, .table td {
+        padding: 10px 8px !important;
+        font-size: 0.85rem !important;
+    }
+    
+    .card-header {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 8px !important;
+        padding: 12px 15px !important;
+    }
+    
+    .t-name {
+        display: none !important;
+    }
+    
+    .grafik-slide > div {
+        height: 230px !important;
+    }
+    .grafik-slide > div[style*="display:flex"] {
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+    .slide-nav-btn { transform: scale(1.05); margin: 0 2px; }
+}
+/* ========================================================= */
 </style>
 </head>
 <body>
@@ -138,18 +275,23 @@ $alert = getAlert();
     </div>
 
     <!-- BANNER BULAN INI -->
-    <div class="card mb-3 animate-fadeIn" style="background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border:none">
+    <div class="card mb-3 animate-fadeIn" style="background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border:none;">
       <div class="card-body" style="padding:22px 28px">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px">
-          <div><div style="font-size:.75rem;opacity:.75;text-transform:uppercase;letter-spacing:.5px">Ringkasan Bulan Ini</div><div style="font-size:1.1rem;font-weight:800;margin-top:3px"><?= date('F Y') ?></div></div>
-          <div style="display:flex;gap:28px;flex-wrap:wrap">
-            <div style="text-align:center"><div style="font-size:1.3rem;font-weight:800"><?= formatRupiah($masuk_bln) ?></div><div style="font-size:.72rem;opacity:.75"><i class="fas fa-arrow-down"></i> Pemasukan</div></div>
-            <div style="width:1px;background:rgba(255,255,255,.2)"></div>
-            <div style="text-align:center"><div style="font-size:1.3rem;font-weight:800"><?= formatRupiah($keluar_bln) ?></div><div style="font-size:.72rem;opacity:.75"><i class="fas fa-arrow-up"></i> Pengeluaran</div></div>
-            <div style="width:1px;background:rgba(255,255,255,.2)"></div>
-            <div style="text-align:center"><div style="font-size:1.3rem;font-weight:800;<?= ($masuk_bln-$keluar_bln)<0?'color:#fca5a5':'' ?>"><?= formatRupiah($masuk_bln-$keluar_bln) ?></div><div style="font-size:.72rem;opacity:.75"><i class="fas fa-balance-scale"></i> Selisih</div></div>
+        <div class="banner-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px">
+          <div>
+            <div style="font-size:.75rem;opacity:.75;text-transform:uppercase;letter-spacing:.5px">Ringkasan Bulan Ini</div>
+            <!-- MENAMBAHKAN TANGGAL HARI INI SECARA LENGKAP -->
+            <div style="font-size:1.1rem;font-weight:800;margin-top:3px"><?= date('d F Y') ?></div>
           </div>
-          <div style="display:flex;gap:8px">
+          <!-- STRUKTUR CLASS BARU UNTUK CSS OVERRIDE -->
+          <div class="banner-stats" style="display:flex;gap:28px;flex-wrap:wrap;align-items:center;">
+            <div style="text-align:center"><div style="font-size:1.3rem;font-weight:800"><?= formatRupiah($masuk_bln) ?></div><div style="font-size:.72rem;opacity:.75"><i class="fas fa-arrow-down"></i> Pemasukan</div></div>
+            <div class="banner-sep" style="width:1px;height:40px;background:rgba(255,255,255,.2)"></div>
+            <div style="text-align:center"><div style="font-size:1.3rem;font-weight:800"><?= formatRupiah($keluar_bln) ?></div><div style="font-size:.72rem;opacity:.75"><i class="fas fa-arrow-up"></i> Pengeluaran</div></div>
+            <div class="banner-sep" style="width:1px;height:40px;background:rgba(255,255,255,.2)"></div>
+            <div class="selisih-box" style="text-align:center"><div style="font-size:1.3rem;font-weight:800;<?= ($masuk_bln-$keluar_bln)<0?'color:#fca5a5':'' ?>"><?= formatRupiah($masuk_bln-$keluar_bln) ?></div><div style="font-size:.72rem;opacity:.75"><i class="fas fa-balance-scale"></i> Selisih</div></div>
+          </div>
+          <div class="banner-actions" style="display:flex;gap:8px">
             <a href="kas-masuk.php" class="btn btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.3)"><i class="fas fa-plus"></i> Kas Masuk</a>
             <a href="kas-keluar.php" class="btn btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.3)"><i class="fas fa-minus"></i> Kas Keluar</a>
           </div>
@@ -233,23 +375,26 @@ $alert = getAlert();
         <a href="laporan.php" class="btn btn-ghost btn-sm"><i class="fas fa-list"></i> Lihat Semua</a>
       </div>
       <div class="card-body" style="padding:0">
-        <table class="table">
-          <thead>
-            <tr><th>Tanggal</th><th>Keterangan</th><th>Kategori</th><th>Jenis</th><th class="text-right">Jumlah</th><th>Aksi</th></tr>
-          </thead>
-          <tbody>
-            <?php while ($r = $trx_recent->fetch_assoc()): ?>
-            <tr>
-              <td style="white-space:nowrap"><?= date('d M Y', strtotime($r['tanggal'])) ?></td>
-              <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?= htmlspecialchars($r['keterangan']) ?></td>
-              <td><span class="badge badge-primary"><?= htmlspecialchars($r['nama_kategori']) ?></span></td>
-              <td><?= $r['jenis']=='masuk' ? '<span class="badge badge-success"><i class="fas fa-arrow-down"></i> Masuk</span>' : '<span class="badge badge-danger"><i class="fas fa-arrow-up"></i> Keluar</span>' ?></td>
-              <td class="text-right fw-600 <?= $r['jenis']=='masuk'?'text-success':'text-danger' ?>"><?= ($r['jenis']=='masuk'?'+':'-').formatRupiah($r['jumlah']) ?></td>
-              <td><a href="<?= $r['jenis']=='masuk'?'kas-masuk':'kas-keluar' ?>.php?edit=<?= $r['id'] ?>" class="btn btn-ghost btn-icon btn-sm" data-tooltip="Edit"><i class="fas fa-edit"></i></a></td>
-            </tr>
-            <?php endwhile; ?>
-          </tbody>
-        </table>
+        <!-- TABEL RESPONSIVE -->
+        <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr><th>Tanggal</th><th>Keterangan</th><th>Kategori</th><th>Jenis</th><th class="text-right">Jumlah</th><th>Aksi</th></tr>
+              </thead>
+              <tbody>
+                <?php while ($r = $trx_recent->fetch_assoc()): ?>
+                <tr>
+                  <td style="white-space:nowrap"><?= date('d M Y', strtotime($r['tanggal'])) ?></td>
+                  <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?= htmlspecialchars($r['keterangan']) ?></td>
+                  <td><span class="badge badge-primary" style="white-space:nowrap;"><?= htmlspecialchars($r['nama_kategori']) ?></span></td>
+                  <td><?= $r['jenis']=='masuk' ? '<span class="badge badge-success" style="white-space:nowrap;"><i class="fas fa-arrow-down"></i> Masuk</span>' : '<span class="badge badge-danger" style="white-space:nowrap;"><i class="fas fa-arrow-up"></i> Keluar</span>' ?></td>
+                  <td class="text-right fw-600 <?= $r['jenis']=='masuk'?'text-success':'text-danger' ?>" style="white-space:nowrap;"><?= ($r['jenis']=='masuk'?'+':'-').formatRupiah($r['jumlah']) ?></td>
+                  <td><a href="<?= $r['jenis']=='masuk'?'kas-masuk':'kas-keluar' ?>.php?edit=<?= $r['id'] ?>" class="btn btn-ghost btn-icon btn-sm" data-tooltip="Edit"><i class="fas fa-edit"></i></a></td>
+                </tr>
+                <?php endwhile; ?>
+              </tbody>
+            </table>
+        </div>
       </div>
     </div>
 
@@ -363,7 +508,7 @@ startAuto(); resetProgress();
 const sidebar=document.getElementById('adminSidebar');
 const overlay=document.getElementById('sidebarOverlay');
 document.getElementById('sidebarToggle').addEventListener('click',()=>{ sidebar.classList.toggle('open'); overlay.classList.toggle('active'); });
-overlay.addEventListener('click',()=>{ sidebar.classList.remove('open'); overlay.classList.remove('active'); });
+if(overlay){ overlay.addEventListener('click',()=>{ sidebar.classList.remove('open'); overlay.classList.remove('active'); }); }
 </script>
 </body>
 </html>

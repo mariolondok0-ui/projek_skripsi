@@ -6,25 +6,73 @@ $admin_id = (int)$_SESSION['admin_id'];
 $admin    = $conn->query("SELECT * FROM users WHERE id=$admin_id")->fetch_assoc();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $pw_lama  = $_POST['password_lama']  ?? '';
-    $pw_baru  = $_POST['password_baru']  ?? '';
-    $pw_ulang = $_POST['password_ulang'] ?? '';
+    $action = $_POST['action'] ?? '';
 
-    if (!password_verify($pw_lama, $admin['password'])) {
-        setAlert('danger', 'Password lama yang Anda masukkan salah.');
-    } elseif (strlen($pw_baru) < 6) {
-        setAlert('danger', 'Password baru minimal 6 karakter.');
-    } elseif ($pw_baru !== $pw_ulang) {
-        setAlert('danger', 'Konfirmasi password tidak cocok.');
-    } elseif ($pw_baru === $pw_lama) {
-        setAlert('danger', 'Password baru tidak boleh sama dengan password lama.');
-    } else {
-        $hash = password_hash($pw_baru, PASSWORD_DEFAULT);
-        $conn->query("UPDATE users SET password='$hash' WHERE id=$admin_id");
-        setAlert('success', 'Password berhasil diubah.');
+    // ---- LOGIKA UBAH EMAIL ----
+    if ($action === 'update_email') {
+        $email = sanitize($_POST['email'] ?? '');
+        
+        if (empty($email)) {
+            setAlert('danger', 'Email wajib diisi.');
+        } else {
+            // Cek apakah email dipakai oleh user/admin lain
+            $cek = $conn->query("SELECT id FROM users WHERE email='$email' AND id!=$admin_id")->fetch_assoc();
+            if ($cek) {
+                setAlert('danger', 'Email sudah digunakan akun lain.');
+            } else {
+                $stmt = $conn->prepare("UPDATE users SET email=? WHERE id=?");
+                $stmt->bind_param('si', $email, $admin_id);
+                $stmt->execute();
+                
+                $_SESSION['admin_email'] = $email; // Update session email
+                setAlert('success', 'Alamat email berhasil diperbarui.');
+            }
+        }
         redirect(APP_URL.'/admin/ubah-password.php');
+        exit;
     }
-    redirect(APP_URL.'/admin/ubah-password.php');
+
+    // ---- LOGIKA UBAH PASSWORD ----
+    if ($action === 'update_password') {
+        $pw_lama  = $_POST['password_lama']  ?? '';
+        $pw_baru  = $_POST['password_baru']  ?? '';
+        $pw_ulang = $_POST['password_ulang'] ?? '';
+
+        $db_pass = $admin['password'];
+        $is_valid = false;
+
+        // PENGECEKAN PINTAR: Support Hash Modern, MD5, atau Teks Biasa
+        if (password_verify($pw_lama, $db_pass)) {
+            $is_valid = true;
+        } elseif (md5($pw_lama) === $db_pass) {
+            $is_valid = true;
+        } elseif ($pw_lama === $db_pass) {
+            $is_valid = true;
+        }
+
+        if (!$is_valid) {
+            setAlert('danger', 'Password lama yang Anda masukkan salah.');
+        } elseif (strlen($pw_baru) < 6) {
+            setAlert('danger', 'Password baru minimal 6 karakter.');
+        } elseif ($pw_baru !== $pw_ulang) {
+            setAlert('danger', 'Konfirmasi password tidak cocok.');
+        } elseif ($pw_baru === $pw_lama) {
+            setAlert('danger', 'Password baru tidak boleh sama dengan password lama.');
+        } else {
+            // Simpan password baru dengan sistem HASH yang sangat aman
+            $hash = password_hash($pw_baru, PASSWORD_DEFAULT);
+            $stmt = $conn->prepare("UPDATE users SET password=? WHERE id=?");
+            $stmt->bind_param('si', $hash, $admin_id);
+            
+            if ($stmt->execute()) {
+                setAlert('success', 'Password berhasil diubah dengan aman.');
+            } else {
+                setAlert('danger', 'Gagal mengubah password. Terjadi kesalahan sistem.');
+            }
+        }
+        redirect(APP_URL.'/admin/ubah-password.php');
+        exit;
+    }
 }
 
 $alert = getAlert();
@@ -33,12 +81,12 @@ $alert = getAlert();
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Keamanan – <?= APP_NAME ?></title>
 <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=2026">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-/* ===== SECURITY PAGE ===== */
+/* ===== SECURITY PAGE - MOBILE OPTIMIZED ===== */
 .security-hero {
   background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 60%, #1d4ed8 100%);
   border-radius: var(--radius-xl);
@@ -89,29 +137,94 @@ $alert = getAlert();
   background: #3730a3;
   display: flex; align-items: center; justify-content: center;
   color: #fff; font-size: .9rem;
+  flex-shrink: 0; /* Mencegah ikon mengecil di HP */
 }
-.form-card-header h3 { font-size: .9rem; font-weight: 700; color: var(--text-primary); }
+.form-card-header h3 { font-size: .95rem; font-weight: 700; color: var(--text-primary); margin: 0; }
 .form-card-body { padding: 22px; }
+
+/* Input Styles for better Touch UI */
+.form-control {
+  font-size: 16px; /* Mencegah auto-zoom di iOS */
+  border-radius: 8px;
+}
+
+/* Eye Button (Show/Hide Password) - Bigger touch target */
+.toggle-pw {
+  position: absolute; 
+  right: 6px; 
+  top: 50%; 
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 10px 12px; /* Area sentuh diperbesar */
+  z-index: 2;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+.toggle-pw:active { background: rgba(0,0,0,0.05); }
 
 /* Strength */
 .strength-wrap { margin-top: 8px; }
 .strength-bar-bg { height: 6px; background: var(--border-light); border-radius: 99px; overflow: hidden; }
 .strength-bar-fill { height: 100%; border-radius: 99px; transition: width .4s ease, background .4s; width: 0%; }
-.strength-label { font-size: .72rem; font-weight: 600; margin-top: 5px; }
+.strength-label { font-size: .75rem; font-weight: 600; margin-top: 5px; }
+
+/* Tips Grid Base */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
 
 /* Checklist */
-.pw-checklist { display: flex; flex-direction: column; gap: 7px; }
-.pw-check-item { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--text-muted); transition: color .2s; }
-.pw-check-item.pass { color: var(--success); }
-.pw-check-item i { width: 16px; text-align: center; flex-shrink: 0; font-size: .75rem; }
+.pw-checklist { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.pw-check-item { display: flex; align-items: center; gap: 8px; font-size: .85rem; color: var(--text-muted); transition: color .2s; }
+.pw-check-item.pass { color: var(--success); font-weight: 600; }
+.pw-check-item i { width: 16px; text-align: center; flex-shrink: 0; font-size: .8rem; }
 
 /* Tips */
-.tip-item { display: flex; align-items: flex-start; gap: 8px; font-size: .8rem; color: var(--text-secondary); }
-.tip-item i { color: var(--success); margin-top: 2px; flex-shrink: 0; }
+.tip-item { display: flex; align-items: flex-start; gap: 8px; font-size: .85rem; color: var(--text-secondary); }
+.tip-item i { color: var(--success); margin-top: 3px; flex-shrink: 0; font-size: .8rem; }
 
+/* ==============================================
+   RESPONSIVE DESIGN (KHUSUS SMARTPHONE)
+============================================== */
 @media (max-width: 640px) {
-  .security-hero { flex-direction: column; text-align: center; padding: 22px 18px; }
-  .security-icon-wrap { margin: 0 auto; }
+  /* Layout Hero diperkecil agar tidak menuh-menuhin layar */
+  .security-hero { 
+    flex-direction: column; 
+    text-align: center; 
+    padding: 20px 16px; 
+    gap: 12px;
+  }
+  .security-icon-wrap { 
+    margin: 0 auto; 
+    width: 54px; 
+    height: 54px; 
+    font-size: 1.4rem; 
+  }
+  
+  /* Form Card padding disesuaikan untuk layar sempit */
+  .form-card-header { padding: 16px; }
+  .form-card-body { padding: 16px; }
+  
+  /* GRID STACKING: Ini kuncinya agar kiri-kanan jadi atas-bawah di HP */
+  .info-grid { 
+    grid-template-columns: 1fr; 
+    gap: 24px; 
+  }
+  
+  /* Pemisah visual antar grid di mode mobile */
+  .info-grid > div:first-child {
+    padding-bottom: 20px;
+    border-bottom: 1px dashed var(--border-light);
+  }
+
+  .form-group { margin-bottom: 18px; }
+  .btn { font-size: 0.95rem; }
 }
 </style>
 </head>
@@ -151,18 +264,47 @@ $alert = getAlert();
       <div class="security-icon-wrap"><i class="fas fa-shield-alt"></i></div>
       <div style="position:relative;z-index:1;flex:1">
         <div style="font-size:1.1rem;font-weight:800;margin-bottom:4px">Keamanan Akun</div>
-        <div style="font-size:.82rem;opacity:.8;line-height:1.6">
-          Ubah password secara berkala untuk menjaga keamanan akun administrator Anda.
+        <div style="font-size:.85rem;opacity:.9;line-height:1.5">
+          Ubah email dan password secara berkala untuk menjaga keamanan akun administrator Anda.
         </div>
         <div style="margin-top:10px;display:flex;align-items:center;gap:8px">
           <div style="width:8px;height:8px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite"></div>
-          <span style="font-size:.75rem;opacity:.8">Akun aktif: <?= htmlspecialchars($admin['nama']) ?></span>
+          <span style="font-size:.75rem;opacity:.9;font-weight:600;">Akun aktif: <?= htmlspecialchars($admin['nama']) ?></span>
         </div>
       </div>
     </div>
 
-    <!-- FORM UBAH PASSWORD -->
+    <!-- FORM UBAH EMAIL -->
     <div class="form-card animate-fadeIn delay-1">
+      <div class="form-card-header">
+        <div class="fch-icon" style="background:#0284c7"><i class="fas fa-envelope"></i></div>
+        <div>
+          <h3>Ubah Alamat Email</h3>
+          <div style="font-size:.75rem;color:var(--text-muted)">Ganti email yang digunakan untuk login</div>
+        </div>
+      </div>
+      <div class="form-card-body">
+        <form method="POST">
+          <input type="hidden" name="action" value="update_email">
+          
+          <div class="form-group" style="margin-bottom:20px">
+            <label class="form-label">Alamat Email Baru <span class="required">*</span></label>
+            <div class="input-group">
+              <i class="fas fa-envelope input-icon"></i>
+              <input type="email" name="email" class="form-control" 
+                     placeholder="Masukkan email baru" required>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100" style="justify-content:center;height:48px;background:#0284c7;border-color:#0284c7">
+            <i class="fas fa-save"></i> Simpan Email Baru
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- FORM UBAH PASSWORD -->
+    <div class="form-card animate-fadeIn delay-2">
       <div class="form-card-header">
         <div class="fch-icon"><i class="fas fa-key"></i></div>
         <div>
@@ -172,6 +314,7 @@ $alert = getAlert();
       </div>
       <div class="form-card-body">
         <form method="POST" autocomplete="off">
+          <input type="hidden" name="action" value="update_password">
 
           <!-- Password Lama -->
           <div class="form-group">
@@ -180,9 +323,8 @@ $alert = getAlert();
               <i class="fas fa-lock input-icon"></i>
               <input type="password" name="password_lama" id="pwLama"
                      class="form-control" placeholder="Masukkan password saat ini" required
-                     style="padding-right:44px">
-              <button type="button" class="toggle-pw" data-target="pwLama"
-                      style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.9rem;padding:4px;z-index:2">
+                     style="padding-right:50px">
+              <button type="button" class="toggle-pw" data-target="pwLama">
                 <i class="fas fa-eye"></i>
               </button>
             </div>
@@ -195,16 +337,15 @@ $alert = getAlert();
               <i class="fas fa-key input-icon"></i>
               <input type="password" name="password_baru" id="pwBaru"
                      class="form-control" placeholder="Minimal 6 karakter" required minlength="6"
-                     style="padding-right:44px">
-              <button type="button" class="toggle-pw" data-target="pwBaru"
-                      style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.9rem;padding:4px;z-index:2">
+                     style="padding-right:50px">
+              <button type="button" class="toggle-pw" data-target="pwBaru">
                 <i class="fas fa-eye"></i>
               </button>
             </div>
             <!-- Strength Meter -->
             <div class="strength-wrap">
               <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-                <span style="font-size:.72rem;color:var(--text-muted)">Kekuatan password</span>
+                <span style="font-size:.75rem;color:var(--text-muted)">Kekuatan password</span>
                 <span class="strength-label" id="strengthLabel" style="color:var(--text-muted)">–</span>
               </div>
               <div class="strength-bar-bg">
@@ -220,16 +361,15 @@ $alert = getAlert();
               <i class="fas fa-check-circle input-icon"></i>
               <input type="password" name="password_ulang" id="pwUlang"
                      class="form-control" placeholder="Ulangi password baru" required
-                     style="padding-right:44px">
-              <button type="button" class="toggle-pw" data-target="pwUlang"
-                      style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.9rem;padding:4px;z-index:2">
+                     style="padding-right:50px">
+              <button type="button" class="toggle-pw" data-target="pwUlang">
                 <i class="fas fa-eye"></i>
               </button>
             </div>
-            <div id="matchMsg" style="font-size:.75rem;margin-top:6px;min-height:18px"></div>
+            <div id="matchMsg" style="font-size:.8rem;margin-top:6px;min-height:18px"></div>
           </div>
 
-          <button type="submit" class="btn btn-primary w-100" style="justify-content:center;height:46px">
+          <button type="submit" class="btn btn-primary w-100" style="justify-content:center;height:48px;background:#15803d;border-color:#15803d">
             <i class="fas fa-shield-alt"></i> Simpan Password Baru
           </button>
         </form>
@@ -237,47 +377,50 @@ $alert = getAlert();
     </div>
 
     <!-- CHECKLIST + TIPS -->
-    <div class="form-card animate-fadeIn delay-2">
+    <div class="form-card animate-fadeIn delay-3">
       <div class="form-card-header">
         <div class="fch-icon" style="background:var(--success)"><i class="fas fa-tasks"></i></div>
         <div>
           <h3>Kriteria & Tips Password</h3>
-          <div style="font-size:.75rem;color:var(--text-muted)">Password yang kuat melindungi akun Anda</div>
+          <div style="font-size:.75rem;color:var(--text-muted)">Panduan membuat password yang aman</div>
         </div>
       </div>
       <div class="form-card-body">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <!-- class info-grid mengatur layout menyamping di PC, dan atas-bawah di HP -->
+        <div class="info-grid">
+          
           <!-- Checklist real-time -->
           <div>
-            <div style="font-size:.8rem;font-weight:700;color:var(--text-primary);margin-bottom:10px">
-              <i class="fas fa-clipboard-check" style="color:var(--primary);margin-right:5px"></i>Syarat Password
+            <div style="font-size:.85rem;font-weight:700;color:var(--text-primary);">
+              <i class="fas fa-clipboard-check" style="color:var(--primary);margin-right:6px"></i>Syarat Minimal
             </div>
             <div class="pw-checklist">
               <div class="pw-check-item" id="chk-len"><i class="fas fa-circle"></i> Minimal 6 karakter</div>
-              <div class="pw-check-item" id="chk-upper"><i class="fas fa-circle"></i> Huruf besar (A-Z)</div>
-              <div class="pw-check-item" id="chk-num"><i class="fas fa-circle"></i> Angka (0-9)</div>
-              <div class="pw-check-item" id="chk-sym"><i class="fas fa-circle"></i> Simbol (!@#$...)</div>
+              <div class="pw-check-item" id="chk-upper"><i class="fas fa-circle"></i> Mengandung huruf besar (A-Z)</div>
+              <div class="pw-check-item" id="chk-num"><i class="fas fa-circle"></i> Mengandung angka (0-9)</div>
+              <div class="pw-check-item" id="chk-sym"><i class="fas fa-circle"></i> Mengandung simbol (!@#$...)</div>
             </div>
           </div>
+          
           <!-- Tips -->
           <div>
-            <div style="font-size:.8rem;font-weight:700;color:var(--text-primary);margin-bottom:10px">
-              <i class="fas fa-lightbulb" style="color:var(--secondary);margin-right:5px"></i>Tips Aman
+            <div style="font-size:.85rem;font-weight:700;color:var(--text-primary);margin-bottom:10px">
+              <i class="fas fa-lightbulb" style="color:var(--secondary);margin-right:6px"></i>Tips Ekstra Aman
             </div>
-            <div style="display:flex;flex-direction:column;gap:8px">
-              <div class="tip-item"><i class="fas fa-check"></i>Jangan pakai nama/tanggal lahir</div>
-              <div class="tip-item"><i class="fas fa-check"></i>Ganti setiap 3 bulan sekali</div>
-              <div class="tip-item"><i class="fas fa-check"></i>Minimal 8 karakter lebih aman</div>
-              <div class="tip-item"><i class="fas fa-check"></i>Jangan gunakan password sama di tempat lain</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div class="tip-item"><i class="fas fa-check"></i>Jangan pakai nama atau tanggal lahir Anda</div>
+              <div class="tip-item"><i class="fas fa-check"></i>Ganti password secara rutin minimal 3 bulan sekali</div>
+              <div class="tip-item"><i class="fas fa-check"></i>Gunakan minimal 8 karakter agar lebih kebal</div>
             </div>
           </div>
+
         </div>
       </div>
     </div>
 
     <!-- KEMBALI -->
-    <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn btn-ghost w-100" style="justify-content:center">
-      <i class="fas fa-arrow-left"></i> Kembali ke Dashboard
+    <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn btn-ghost w-100" style="justify-content:center;height:48px;margin-bottom:30px;">
+      <i class="fas fa-arrow-left"></i> Kembali
     </a>
 
   </div>
@@ -323,7 +466,7 @@ document.getElementById('pwBaru').addEventListener('input', function () {
     { max:5, bg:'#10b981', txt:'Sangat Kuat' },
   ];
   const lvl = levels.find(l => score <= l.max) || levels[4];
-  if (v.length === 0) { bar.style.background='var(--border)'; label.textContent='–'; label.style.color='var(--text-muted)'; }
+  if (v.length === 0) { bar.style.background='var(--border-light)'; label.textContent='–'; label.style.color='var(--text-muted)'; }
   else { bar.style.background = lvl.bg; label.textContent = lvl.txt; label.style.color = lvl.bg; }
 
   checkMatch();
