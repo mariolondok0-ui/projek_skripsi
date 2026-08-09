@@ -71,7 +71,7 @@ $alert = getAlert();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Tempat Sampah – <?= APP_NAME ?></title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=2026">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=1786264272">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 /* =========================================================
@@ -108,9 +108,9 @@ select.form-select {
     transition: all 0.2s ease;
 }
 select.form-select:focus {
-    border-color: #1a7a4a !important;
+    border-color: #1e6eb5 !important;
     outline: none !important;
-    box-shadow: 0 0 0 3px rgba(26,122,74,0.15) !important;
+    box-shadow: 0 0 0 3px rgba(30,110,181,0.15) !important;
     background-color: #ffffff !important;
 }
 select.form-select option {
@@ -396,7 +396,7 @@ select.form-select option {
           <tr>
             <td colspan="8">
               <div class="empty-state" style="padding:60px 20px">
-                <div class="es-icon"><i class="fas fa-check-circle" style="color:var(--success)"></i></div>
+                <div class="es-icon"><i class="fas fa-check-circle" style="color:var(--info)"></i></div>
                 <h3>Tempat Sampah Kosong!</h3>
                 <p>Tidak ada data yang dihapus saat ini. Semua data Anda aman.</p>
               </div>

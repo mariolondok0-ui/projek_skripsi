@@ -30,12 +30,12 @@ $saldo_total = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM tra
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Laporan Keuangan – <?= APP_NAME ?></title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=<?= time() ?>">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=1786264272?v=<?= time() ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 /* ===== LAPORAN PUBLIK ===== */
 .lap-header {
-  background: linear-gradient(135deg,#0f3d26 0%,#1a7a4a 55%,#0d9488 100%);
+  background: linear-gradient(135deg,#0f2d4a 0%,#1e6eb5 55%,#5ba3d9 100%);
   padding: 40px 0 28px;
   position: relative; overflow: hidden;
 }
@@ -270,7 +270,7 @@ $saldo_total = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM tra
       $isMasuk = $r['jenis'] === 'masuk';
     ?>
     <div class="trx-card animate-fadeIn">
-      <div class="trx-icon" style="background:<?= $isMasuk?'rgba(16,185,129,.1)':'rgba(239,68,68,.1)' ?>;color:<?= $isMasuk?'var(--success)':'var(--danger)' ?>">
+      <div class="trx-icon" style="background:<?= $isMasuk?'rgba(59,130,246,.1)':'rgba(239,68,68,.1)' ?>;color:<?= $isMasuk?'var(--success)':'var(--danger)' ?>">
         <i class="fas fa-arrow-<?= $isMasuk?'down':'up' ?>"></i>
       </div>
       <div class="trx-body">
@@ -298,7 +298,7 @@ $saldo_total = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM tra
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center">
         <div>
           <div style="font-size:.7rem;color:var(--text-muted)">Total Masuk</div>
-          <div style="font-size:.95rem;font-weight:800;color:var(--success)">+<?= number_format($sum['tm'],0,',','.') ?></div>
+          <div style="font-size:.95rem;font-weight:800;color:var(--info)">+<?= number_format($sum['tm'],0,',','.') ?></div>
         </div>
         <div>
           <div style="font-size:.7rem;color:var(--text-muted)">Total Keluar</div>
@@ -307,7 +307,7 @@ $saldo_total = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM tra
       </div>
       <div style="border-top:1px solid var(--border-light);margin-top:12px;padding-top:12px;text-align:center">
         <div style="font-size:.7rem;color:var(--text-muted)">Saldo Periode</div>
-        <div style="font-size:1.1rem;font-weight:800;<?= ($sum['tm']-$sum['tk'])>=0?'color:var(--success)':'color:var(--danger)' ?>"><?= formatRupiah($sum['tm']-$sum['tk']) ?></div>
+        <div style="font-size:1.1rem;font-weight:800;<?= ($sum['tm']-$sum['tk'])>=0?'color:var(--info)':'color:var(--danger)' ?>"><?= formatRupiah($sum['tm']-$sum['tk']) ?></div>
       </div>
     </div>
     <?php endif; ?>

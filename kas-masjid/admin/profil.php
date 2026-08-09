@@ -70,12 +70,12 @@ $alert       = getAlert();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Profil – <?= APP_NAME ?></title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=2026">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=1786264272">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 /* ===== PROFILE PAGE ===== */
 .profile-hero {
-  background: linear-gradient(135deg, #0f3d26 0%, #1a7a4a 60%, #0d9488 100%);
+  background: linear-gradient(135deg, #0f2d4a 0%, #1e6eb5 60%, #5ba3d9 100%);
   border-radius: var(--radius-xl);
   padding: 32px 28px;
   color: #fff;
@@ -135,13 +135,13 @@ $alert       = getAlert();
   width: 28px;
   height: 28px;
   background: #ffffff;
-  color: #1a7a4a;
+  color: #1e6eb5;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.8rem;
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  border: 2px solid #1a7a4a;
+  border: 2px solid #1e6eb5;
   transition: transform 0.2s ease, background 0.2s;
   z-index: 10;
 }

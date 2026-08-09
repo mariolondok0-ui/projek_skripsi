@@ -55,7 +55,7 @@ $alert = getAlert();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Dashboard – <?= APP_NAME ?></title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=2026">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=1786264272">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
@@ -318,12 +318,7 @@ $alert = getAlert();
             <div style="font-size:.75rem;color:var(--text-muted);margin-top:6px" id="slideDesc">6 bulan terakhir</div>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
-            <span style="font-size:.78rem;color:var(--text-muted)" id="slideCounter">1 / 4</span>
-            <div style="display:flex;gap:6px">
-              <button class="slide-nav-btn" onclick="changeSlide(-1)"><i class="fas fa-chevron-left"></i></button>
-              <button class="slide-nav-btn" onclick="togglePause()" id="btnPause"><i class="fas fa-pause" id="pauseIcon"></i></button>
-              <button class="slide-nav-btn" onclick="changeSlide(1)"><i class="fas fa-chevron-right"></i></button>
-            </div>
+            <span style="font-size:.72rem;color:rgba(255,255,255,.6);background:rgba(255,255,255,.1);padding:3px 10px;border-radius:99px" id="slideCounter">1 / 4</span>
           </div>
         </div>
 
@@ -405,21 +400,21 @@ $alert = getAlert();
 <script>
 Chart.defaults.font.family = "'Poppins',sans-serif";
 Chart.defaults.color = '#6b7280';
-Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15,61,38,.93)';
+Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15,45,74,.93)';
 Chart.defaults.plugins.tooltip.titleColor = '#fff';
 Chart.defaults.plugins.tooltip.bodyColor   = 'rgba(255,255,255,.85)';
 Chart.defaults.plugins.tooltip.padding     = 12;
 Chart.defaults.plugins.tooltip.cornerRadius = 8;
 
 const fmtRp = v => 'Rp ' + new Intl.NumberFormat('id-ID').format(v);
-const CG = ['#1a7a4a','#22a05e','#c9a84c','#3b82f6','#f59e0b','#8b5cf6','#ec4899','#14b8a6'];
+const CG = ['#1e6eb5','#2d86d4','#c9a84c','#3b82f6','#f59e0b','#8b5cf6','#ec4899','#14b8a6'];
 const CR = ['#ef4444','#f87171','#dc2626','#b91c1c','#fca5a5','#ff8080','#fecaca','#c53030'];
 
 // Bar Chart
 new Chart(document.getElementById('barChart').getContext('2d'), {
   type:'bar',
   data:{labels:<?= json_encode($chart_labels) ?>,datasets:[
-    {label:'Pemasukan',   data:<?= json_encode($chart_masuk) ?>,  backgroundColor:'rgba(26,122,74,.85)',borderRadius:7,borderSkipped:false},
+    {label:'Pemasukan',   data:<?= json_encode($chart_masuk) ?>,  backgroundColor:'rgba(30,110,181,.85)',borderRadius:7,borderSkipped:false},
     {label:'Pengeluaran', data:<?= json_encode($chart_keluar) ?>, backgroundColor:'rgba(239,68,68,.75)', borderRadius:7,borderSkipped:false}
   ]},
   options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
@@ -435,9 +430,9 @@ new Chart(document.getElementById('lineChart').getContext('2d'), {
   type:'line',
   data:{labels:<?= json_encode($line_labels) ?>,datasets:[{
     label:'Saldo Kumulatif',data:<?= json_encode($line_saldo) ?>,
-    borderColor:'#1a7a4a',backgroundColor:'rgba(26,122,74,.08)',
+    borderColor:'#1e6eb5',backgroundColor:'rgba(30,110,181,.08)',
     borderWidth:3,fill:true,tension:.4,
-    pointBackgroundColor:'#1a7a4a',pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:5,pointHoverRadius:8
+    pointBackgroundColor:'#1e6eb5',pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:5,pointHoverRadius:8
   }]},
   options:{responsive:true,maintainAspectRatio:false,
     plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` Saldo: ${fmtRp(c.raw)}`}}},

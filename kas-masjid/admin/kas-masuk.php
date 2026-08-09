@@ -72,7 +72,7 @@ $alert = getAlert();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Kas Masuk - <?= APP_NAME ?></title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=2026">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=1786264272">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
@@ -103,7 +103,7 @@ $alert = getAlert();
     
     <div class="page-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
       <div>
-        <h1 class="page-title"><i class="fas fa-arrow-circle-down" style="color:var(--success)"></i> Kas Masuk</h1>
+        <h1 class="page-title"><i class="fas fa-arrow-circle-down" style="color:var(--info)"></i> Kas Masuk</h1>
         <p class="page-subtitle">Kelola data pemasukan kas <?= MASJID_NAME ?></p>
       </div>
       <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn btn-ghost" style="border:1.5px solid var(--border);background:var(--bg-card)">
@@ -185,9 +185,9 @@ $alert = getAlert();
     <div class="summary-bar" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
       <div style="display:flex;gap:12px;flex-wrap:wrap">
         <div class="summary-bar-item" style="background:var(--bg-card);padding:12px 18px;border-radius:var(--radius);box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:10px;border-left:3px solid var(--success)">
-          <i class="fas fa-arrow-down" style="color:var(--success);font-size:1.1rem"></i>
+          <i class="fas fa-arrow-down" style="color:var(--info);font-size:1.1rem"></i>
           <div><div style="font-size:.7rem;color:var(--text-muted)">Total Bulan Ini</div>
-          <div style="font-weight:800;color:var(--success);font-size:.95rem"><?= formatRupiah($summary['total']) ?></div></div>
+          <div style="font-weight:800;color:var(--info);font-size:.95rem"><?= formatRupiah($summary['total']) ?></div></div>
         </div>
         <div class="summary-bar-item" style="background:var(--bg-card);padding:12px 18px;border-radius:var(--radius);box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:10px;border-left:3px solid var(--info)">
           <i class="fas fa-list" style="color:var(--info);font-size:1.1rem"></i>
@@ -248,7 +248,7 @@ $alert = getAlert();
     <div class="trx-mobile-card animate-fadeIn">
       <?php if (!empty($rows_data)): foreach ($rows_data as $r): ?>
       <div class="trx-m-item">
-        <div class="trx-m-icon" style="background:rgba(16,185,129,.1);color:var(--success)">
+        <div class="trx-m-icon" style="background:rgba(59,130,246,.1);color:var(--info)">
           <i class="fas fa-arrow-down"></i>
         </div>
         <div class="trx-m-body">

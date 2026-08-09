@@ -32,7 +32,7 @@ $s = $conn->query("SELECT COALESCE(SUM(CASE WHEN jenis='masuk' THEN jumlah END),
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Visualisasi Grafik – <?= APP_NAME ?></title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=<?= time() ?>">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=1786264272?v=<?= time() ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
@@ -171,7 +171,7 @@ $s = $conn->query("SELECT COALESCE(SUM(CASE WHEN jenis='masuk' THEN jumlah END),
 <?php include 'includes/partials/navbar-publik.php'; ?>
 
 <!-- PAGE HEADER -->
-<div style="background:linear-gradient(135deg,#0f3d26,#1a7a4a);padding:40px 0 28px;position:relative;overflow:hidden">
+<div style="background:linear-gradient(135deg,#0f2d4a,#1e6eb5);padding:40px 0 28px;position:relative;overflow:hidden">
   <div style="position:absolute;top:-50px;right:-50px;width:180px;height:180px;background:rgba(255,255,255,.05);border-radius:50%"></div>
   <div class="container" style="position:relative;z-index:1">
     <a href="<?= APP_URL ?>/index.php"
@@ -244,12 +244,7 @@ $s = $conn->query("SELECT COALESCE(SUM(CASE WHEN jenis='masuk' THEN jumlah END),
         <div class="chart-card-desc" id="slideDesc" style="margin-top:8px">Perbandingan pemasukan dan pengeluaran per bulan</div>
       </div>
       <div style="display:flex;align-items:center;gap:14px">
-        <span class="slide-counter" id="slideCounter">1 / 4</span>
-        <div class="slide-nav-btns">
-          <button class="slide-nav-btn" id="btnPrev" onclick="changeSlide(-1)"><i class="fas fa-chevron-left"></i></button>
-          <button class="slide-nav-btn" id="btnPause" onclick="togglePause()"><i class="fas fa-pause" id="pauseIcon"></i></button>
-          <button class="slide-nav-btn" id="btnNext" onclick="changeSlide(1)"><i class="fas fa-chevron-right"></i></button>
-        </div>
+        <span style="font-size:.72rem;color:rgba(255,255,255,.6);background:rgba(255,255,255,.1);padding:3px 10px;border-radius:99px" id="slideCounter">1 / 4</span>
       </div>
     </div>
 
@@ -336,12 +331,12 @@ const PIE_EL  = <?= json_encode($pel) ?>;
 const PIE_ED  = <?= json_encode($ped) ?>;
 
 const fmtRp  = v => 'Rp ' + new Intl.NumberFormat('id-ID').format(v);
-const CG = ['#1a7a4a','#22a05e','#c9a84c','#3b82f6','#f59e0b','#8b5cf6','#ec4899','#14b8a6'];
+const CG = ['#1e6eb5','#2d86d4','#c9a84c','#3b82f6','#f59e0b','#8b5cf6','#ec4899','#14b8a6'];
 const CR = ['#ef4444','#f87171','#dc2626','#b91c1c','#fca5a5','#fecaca','#ff8080','#c53030'];
 
 Chart.defaults.font.family = "'Poppins', sans-serif";
 Chart.defaults.color = '#6b7280';
-Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15,61,38,.93)';
+Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15,45,74,.93)';
 Chart.defaults.plugins.tooltip.titleColor      = '#fff';
 Chart.defaults.plugins.tooltip.bodyColor       = 'rgba(255,255,255,.85)';
 Chart.defaults.plugins.tooltip.padding         = 12;
@@ -354,7 +349,7 @@ new Chart(document.getElementById('barChart').getContext('2d'), {
   data: {
     labels: LABELS,
     datasets: [
-      { label:'Pemasukan',   data:MASUK,  backgroundColor:'rgba(26,122,74,.85)',  borderRadius:8, borderSkipped:false },
+      { label:'Pemasukan',   data:MASUK,  backgroundColor:'rgba(30,110,181,.85)',  borderRadius:8, borderSkipped:false },
       { label:'Pengeluaran', data:KELUAR, backgroundColor:'rgba(239,68,68,.75)',  borderRadius:8, borderSkipped:false }
     ]
   },
@@ -380,9 +375,9 @@ new Chart(document.getElementById('lineChart').getContext('2d'), {
     labels: LABELS,
     datasets: [{
       label:'Saldo Kumulatif', data:SALDO,
-      borderColor:'#1a7a4a', backgroundColor:'rgba(26,122,74,.08)',
+      borderColor:'#1e6eb5', backgroundColor:'rgba(30,110,181,.08)',
       borderWidth:3, fill:true, tension:.4,
-      pointBackgroundColor:'#1a7a4a', pointBorderColor:'#fff',
+      pointBackgroundColor:'#1e6eb5', pointBorderColor:'#fff',
       pointBorderWidth:2, pointRadius:6, pointHoverRadius:9
     }]
   },

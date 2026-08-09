@@ -57,12 +57,12 @@ $alert = getAlert();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Kategori – <?= APP_NAME ?></title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=2026">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=1786264272">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 /* ===== KATEGORI PAGE ===== */
 .cat-hero {
-  background: linear-gradient(135deg,#0f3d26 0%,#1a7a4a 60%,#0d9488 100%);
+  background: linear-gradient(135deg,#0f2d4a 0%,#1e6eb5 60%,#5ba3d9 100%);
   border-radius: var(--radius-xl);
   padding: 24px 22px;
   color: #fff;
@@ -133,7 +133,7 @@ $alert = getAlert();
   font-size:.875rem; font-weight:600;
 }
 .jenis-label:hover { border-color:var(--border); background:var(--bg-main); }
-.jenis-label.selected-masuk  { border-color:var(--success); background:rgba(16,185,129,.06); }
+.jenis-label.selected-masuk  { border-color:var(--info); background:rgba(59,130,246,.06); }
 .jenis-label.selected-keluar { border-color:var(--danger);  background:rgba(239,68,68,.06); }
 
 /* Kategori List Item */
@@ -284,8 +284,8 @@ $alert = getAlert();
                 <label class="jenis-label <?= ($edit_data['jenis']??'masuk')=='masuk'?'selected-masuk':'' ?>" id="lblMasuk">
                   <input type="radio" name="jenis" value="masuk"
                          <?= ($edit_data['jenis']??'masuk')=='masuk'?'checked':'' ?>
-                         style="accent-color:var(--success)">
-                  <i class="fas fa-arrow-down" style="color:var(--success)"></i>
+                         style="accent-color:var(--info)">
+                  <i class="fas fa-arrow-down" style="color:var(--info)"></i>
                   Kas Masuk
                 </label>
                 <label class="jenis-label <?= ($edit_data['jenis']??'')=='keluar'?'selected-keluar':'' ?>" id="lblKeluar">
@@ -318,8 +318,8 @@ $alert = getAlert();
         <!-- Tab Switcher (untuk HP) -->
         <div class="tab-switcher">
           <button class="tab-btn active" id="tabMasukBtn" onclick="switchTab('masuk')">
-            <i class="fas fa-arrow-down" style="color:var(--success);margin-right:5px"></i>
-            Pemasukan <span id="badgeMasuk" style="background:rgba(16,185,129,.15);color:var(--success);padding:1px 7px;border-radius:99px;font-size:.7rem;margin-left:4px"><?= $total_masuk ?></span>
+            <i class="fas fa-arrow-down" style="color:var(--info);margin-right:5px"></i>
+            Pemasukan <span id="badgeMasuk" style="background:rgba(59,130,246,.15);color:var(--info);padding:1px 7px;border-radius:99px;font-size:.7rem;margin-left:4px"><?= $total_masuk ?></span>
           </button>
           <button class="tab-btn" id="tabKeluarBtn" onclick="switchTab('keluar')">
             <i class="fas fa-arrow-up" style="color:var(--danger);margin-right:5px"></i>

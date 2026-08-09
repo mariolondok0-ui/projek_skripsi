@@ -70,7 +70,7 @@ if (isset($_GET['print'])):
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Segoe UI',Arial,sans-serif; font-size:12px; color:#222; background: #e8f5ee; }
+  body { font-family:'Segoe UI',Arial,sans-serif; font-size:12px; color:#222; background: #e8f0f8; }
   
   /* --- CONTROL BAR (Menu Atas) --- */
   .control-bar { 
@@ -86,8 +86,8 @@ if (isset($_GET['print'])):
   .btn-print:hover { background: #f0f0f0; }
   .btn-print.pdf { background: #c9a84c; color: #fff; border: none; }
   .btn-print.pdf:hover { background: #b8973e; }
-  .btn-print.cetak { background: #1a7a4a; color: #fff; border: none; }
-  .btn-print.cetak:hover { background: #145e38; }
+  .btn-print.cetak { background: #1e6eb5; color: #fff; border: none; }
+  .btn-print.cetak:hover { background: #155a99; }
 
   /* --- KERTAS PRINT (A4) --- */
   .print-wrapper { margin-top: 90px; padding-bottom: 40px; }
@@ -101,8 +101,8 @@ if (isset($_GET['print'])):
   }
   
   /* Typography & Alignment */
-  .header { text-align:center; padding-bottom: 15px; border-bottom:3px solid #1a7a4a; margin-bottom:20px; }
-  .header h1 { font-size:18px; color:#1a7a4a; font-weight:800; letter-spacing: 1px; }
+  .header { text-align:center; padding-bottom: 15px; border-bottom:3px solid #1e6eb5; margin-bottom:20px; }
+  .header h1 { font-size:18px; color:#1e6eb5; font-weight:800; letter-spacing: 1px; }
   .header h2 { font-size:14px; margin-top:5px; color: #333; }
   .header p  { font-size:11px; color:#555; margin-top:5px; line-height: 1.5; }
   
@@ -117,19 +117,19 @@ if (isset($_GET['print'])):
   
   /* --- TABEL (RATA KIRI & KANAN) --- */
   table { width:100%; border-collapse:collapse; margin-bottom: 20px; }
-  thead th { background:#1a7a4a; color:#fff; padding:10px 12px; font-size:11px; text-transform:uppercase; font-weight: 600; border: 1px solid #145e38; }
+  thead th { background:#1e6eb5; color:#fff; padding:10px 12px; font-size:11px; text-transform:uppercase; font-weight: 600; border: 1px solid #155a99; }
   tbody td { padding:9px 12px; border: 1px solid #e5e7eb; font-size: 11px; vertical-align: middle; }
   tbody tr:nth-child(even) { background:#f9fafb; }
-  tfoot td { padding:10px 12px; font-weight:700; background:#f0f4f0; border: 1px solid #d1d5db; border-top: 2px solid #1a7a4a; font-size: 11px; }
+  tfoot td { padding:10px 12px; font-weight:700; background:#f0f4f8; border: 1px solid #d1d5db; border-top: 2px solid #1e6eb5; font-size: 11px; }
   
   /* Class Alignment */
   .text-center { text-align: center; }
   .text-left { text-align: left; }
   .text-right { text-align: right; }
   
-  .badge-masuk  { color:#059669; font-weight:700; }
+  .badge-masuk  { color:#1d6fb8; font-weight:700; }
   .badge-keluar { color:#dc2626; font-weight:700; }
-  .masuk  { color:#059669; font-weight:700; }
+  .masuk  { color:#1d6fb8; font-weight:700; }
   .keluar { color:#dc2626; font-weight:700; }
   
   /* Footer Tanda Tangan */
@@ -278,7 +278,7 @@ endif;
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Laporan <?= APP_NAME ?></title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=2026">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=1786264272">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 /* =========================================================

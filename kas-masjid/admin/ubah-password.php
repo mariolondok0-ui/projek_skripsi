@@ -83,7 +83,7 @@ $alert = getAlert();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Keamanan – <?= APP_NAME ?></title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=2026">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=1786264272">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 /* ===== SECURITY PAGE - MOBILE OPTIMIZED ===== */
@@ -463,7 +463,7 @@ document.getElementById('pwBaru').addEventListener('input', function () {
     { max:2, bg:'#f97316', txt:'Lemah' },
     { max:3, bg:'#f59e0b', txt:'Sedang' },
     { max:4, bg:'#3b82f6', txt:'Kuat' },
-    { max:5, bg:'#10b981', txt:'Sangat Kuat' },
+    { max:5, bg:'#3b82f6', txt:'Sangat Kuat' },
   ];
   const lvl = levels.find(l => score <= l.max) || levels[4];
   if (v.length === 0) { bar.style.background='var(--border-light)'; label.textContent='–'; label.style.color='var(--text-muted)'; }
@@ -485,7 +485,7 @@ function checkMatch() {
   const msg   = document.getElementById('matchMsg');
   if (!ulang) { msg.innerHTML = ''; return; }
   if (baru === ulang) {
-    msg.innerHTML = '<i class="fas fa-check-circle" style="color:var(--success)"></i> <span style="color:var(--success)">Password cocok</span>';
+    msg.innerHTML = '<i class="fas fa-check-circle" style="color:var(--info)"></i> <span style="color:var(--info)">Password cocok</span>';
   } else {
     msg.innerHTML = '<i class="fas fa-times-circle" style="color:var(--danger)"></i> <span style="color:var(--danger)">Password tidak cocok</span>';
   }

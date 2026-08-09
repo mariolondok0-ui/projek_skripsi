@@ -42,15 +42,15 @@ $trx_terbaru = $conn->query("SELECT t.*,k.nama_kategori FROM transaksi t JOIN ka
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title><?= APP_NAME ?> – Transparansi Keuangan Masjid</title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=<?= time() ?>">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=1786264272">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 /* ===== LANDING PAGE ===== */
-.hero-section{background:linear-gradient(135deg,#0b2e1c 0%,#1a7a4a 50%,#0d9488 100%);background-size:200% 200%;animation:gradientShift 10s ease infinite;min-height:100svh;display:flex;align-items:center;position:relative;overflow:hidden;padding:80px 0 56px}
-/* FIX: Konten hero rata kiri sesuai container */
-.hero-section .container{position:relative;z-index:2;width:100%;max-width:1180px;margin:0 auto;padding:0 24px}
-.hero-inner{max-width:700px;width:100%}
+.hero-section{
+  min-height:100svh;display:flex;align-items:center;position:relative;overflow:hidden;padding:80px 0 56px;
+  background-color:#0a1f35;
+}
 .hero-section::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E")}
 .hero-c1{position:absolute;top:-80px;right:-80px;width:300px;height:300px;background:rgba(255,255,255,.04);border-radius:50%;pointer-events:none}
 .hero-c2{position:absolute;bottom:-60px;left:-60px;width:220px;height:220px;background:rgba(201,168,76,.08);border-radius:50%;pointer-events:none}
@@ -68,7 +68,7 @@ $trx_terbaru = $conn->query("SELECT t.*,k.nama_kategori FROM transaksi t JOIN ka
 .hstat:last-child{border-right:none}
 .hstat .hv{font-size:clamp(.9rem,2.5vw,1.3rem);font-weight:800;color:#fff}
 .hstat .hl{font-size:.67rem;color:rgba(255,255,255,.65);margin-top:3px}
-.saldo-card-pub{background:linear-gradient(135deg,#1a7a4a,#0d9488);border-radius:22px;padding:24px 20px;color:#fff;position:relative;overflow:hidden;box-shadow:0 12px 36px rgba(26,122,74,.35)}
+.saldo-card-pub{background:linear-gradient(135deg,#1e6eb5,#5ba3d9);border-radius:22px;padding:24px 20px;color:#fff;position:relative;overflow:hidden;box-shadow:0 12px 36px rgba(30,110,181,.35)}
 .saldo-card-pub::before{content:'';position:absolute;top:-30px;right:-30px;width:110px;height:110px;background:rgba(255,255,255,.07);border-radius:50%}
 .mstat{background:var(--bg-card);border-radius:14px;padding:15px;box-shadow:var(--shadow);border:1px solid var(--border-light);display:flex;align-items:center;gap:12px;transition:var(--transition)}
 .mstat:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
@@ -85,14 +85,14 @@ $trx_terbaru = $conn->query("SELECT t.*,k.nama_kategori FROM transaksi t JOIN ka
 .fitur-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
 .fitur-card .fi{width:52px;height:52px;border-radius:14px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
 .pub-sec{padding:52px 0}
-.sec-tag{display:inline-flex;align-items:center;gap:7px;background:rgba(26,122,74,.1);color:var(--primary);padding:5px 14px;border-radius:99px;font-size:.75rem;font-weight:700;margin-bottom:10px;border:1px solid rgba(26,122,74,.15)}
+.sec-tag{display:inline-flex;align-items:center;gap:7px;background:rgba(30,110,181,.1);color:var(--primary);padding:5px 14px;border-radius:99px;font-size:.75rem;font-weight:700;margin-bottom:10px;border:1px solid rgba(30,110,181,.15)}
 .sec-h{font-size:clamp(1.4rem,3vw,1.9rem);font-weight:800;color:var(--text-primary);margin-bottom:8px}
 .sec-h span{color:var(--primary)}
 .sec-sub{color:var(--text-secondary);font-size:.875rem;max-width:500px;margin:0 auto;line-height:1.7}
 .grafik-slide{display:none;animation:slideInChart .5s cubic-bezier(.4,0,.2,1)}
 .grafik-slide.active{display:block}
 @keyframes slideInChart{from{opacity:0;transform:translateX(40px) scale(.97)}to{opacity:1;transform:translateX(0) scale(1)}}
-.sp-wrap{height:3px;background:rgba(26,122,74,.15);border-radius:99px;overflow:hidden;margin-bottom:14px}
+.sp-wrap{height:3px;background:rgba(30,110,181,.15);border-radius:99px;overflow:hidden;margin-bottom:14px}
 .sp-bar{height:100%;background:var(--primary);border-radius:99px;width:0%;transition:width linear}
 .sdot{width:8px;height:8px;border-radius:50%;background:var(--border);cursor:pointer;transition:var(--transition);border:none}
 .sdot.active{background:var(--primary);width:22px;border-radius:99px}
@@ -122,23 +122,29 @@ $trx_terbaru = $conn->query("SELECT t.*,k.nama_kategori FROM transaksi t JOIN ka
 <?php include 'includes/partials/navbar-publik.php'; ?>
 
 <!-- HERO -->
-<section class="hero-section">
+<section class="hero-section" style="background: linear-gradient(135deg, rgba(10,31,53,0.78) 0%, rgba(30,110,181,0.70) 60%, rgba(91,163,217,0.60) 100%), url('<?= APP_URL ?>/assets/img/masjid.jpg') center center / cover no-repeat; animation:none">
   <div class="hero-c1"></div>
   <div class="hero-c2"></div>
-  <div class="container">
-    <div class="hero-inner">
-      <div class="hero-badge-pub"><i class="fas fa-mosque"></i> <?= MASJID_NAME ?></div>
-      <h1 class="hero-title">Transparansi Keuangan<br><span>Kas Masjid</span> untuk Jamaah</h1>
-      <p class="hero-desc">Pantau pemasukan, pengeluaran, dan saldo kas masjid secara real-time. Informasi terbuka dan dapat diakses oleh seluruh jamaah kapan saja.</p>
-      <div class="hero-btns">
-        <a href="laporan-publik.php" class="hbtn-gold"><i class="fas fa-file-alt"></i> Lihat Laporan</a>
-        <a href="grafik-publik.php"  class="hbtn-ghost"><i class="fas fa-chart-bar"></i> Lihat Grafik</a>
+  <div class="container" style="position:relative;z-index:2;width:100%">
+    
+    <!-- BUNGKUSAN POSISI TENGAH -->
+    <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+      <div class="hero-badge-pub" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(4px);">
+          <i class="fas fa-mosque"></i> <?= MASJID_NAME ?>
       </div>
-      <div class="hero-stats-bar">
-        <div class="hstat"><div class="hv" id="heroMasuk">Rp 0</div><div class="hl"><i class="fas fa-arrow-down" style="color:#6ee7b7;margin-right:2px"></i>Total Pemasukan</div></div>
-        <div class="hstat"><div class="hv" id="heroKeluar">Rp 0</div><div class="hl"><i class="fas fa-arrow-up" style="color:#fca5a5;margin-right:2px"></i>Total Pengeluaran</div></div>
-        <div class="hstat"><div class="hv"><?= $total_trx ?></div><div class="hl"><i class="fas fa-exchange-alt" style="color:#93c5fd;margin-right:2px"></i>Total Transaksi</div></div>
-      </div>
+      <h1 class="hero-title" style="color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
+          Transparansi Keuangan<br><span style="color: #f6d365;">Kas Masjid</span> untuk Jamaah
+      </h1>
+      <p class="hero-desc" style="color: #f8fafc; text-shadow: 1px 1px 4px rgba(0,0,0,0.8);">
+          Pantau pemasukan, pengeluaran, dan saldo kas masjid secara real-time. Informasi terbuka dan dapat diakses oleh seluruh jamaah kapan saja.
+      </p>
+    </div>
+    
+    <!-- STATISTIK (Beri jarak atas sedikit agar tidak terlalu mepet dengan teks) -->
+    <div class="hero-stats-bar" style="margin-top: 40px;">
+      <div class="hstat"><div class="hv" id="heroMasuk">Rp 0</div><div class="hl"><i class="fas fa-arrow-down" style="color:#93c5fd;margin-right:2px"></i>Total Pemasukan</div></div>
+      <div class="hstat"><div class="hv" id="heroKeluar">Rp 0</div><div class="hl"><i class="fas fa-arrow-up" style="color:#fca5a5;margin-right:2px"></i>Total Pengeluaran</div></div>
+      <div class="hstat"><div class="hv"><?= $total_trx ?></div><div class="hl"><i class="fas fa-exchange-alt" style="color:#93c5fd;margin-right:2px"></i>Total Transaksi</div></div>
     </div>
   </div>
 </section>
@@ -164,7 +170,7 @@ $trx_terbaru = $conn->query("SELECT t.*,k.nama_kategori FROM transaksi t JOIN ka
           </div>
           <div style="background:rgba(255,255,255,.12);border-radius:11px;padding:12px 14px;border:1px solid rgba(255,255,255,.15);display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
             <div>
-              <div style="font-size:.67rem;opacity:.75"><i class="fas fa-arrow-down" style="color:#6ee7b7;margin-right:3px"></i>Masuk Bulan Ini</div>
+              <div style="font-size:.67rem;opacity:.75"><i class="fas fa-arrow-down" style="color:#93c5fd;margin-right:3px"></i>Masuk Bulan Ini</div>
               <div style="font-size:.88rem;font-weight:700;margin-top:2px"><?= formatRupiah($masuk_bln) ?></div>
             </div>
             <div>
@@ -183,7 +189,7 @@ $trx_terbaru = $conn->query("SELECT t.*,k.nama_kategori FROM transaksi t JOIN ka
       <div style="display:flex;flex-direction:column;gap:11px">
         <?php
         $stats = [
-          ['fas fa-arrow-down','rgba(16,185,129,.1)','var(--success)',formatRupiah($masuk_bln),'Pemasukan '.date('F Y')],
+          ['fas fa-arrow-down','rgba(59,130,246,.1)','var(--success)',formatRupiah($masuk_bln),'Pemasukan '.date('F Y')],
           ['fas fa-arrow-up','rgba(239,68,68,.1)','var(--danger)',formatRupiah($keluar_bln),'Pengeluaran '.date('F Y')],
           ['fas fa-exchange-alt','rgba(59,130,246,.1)','var(--info)',$trx_bln.' transaksi','Aktivitas '.date('F Y')],
           ['fas fa-list','rgba(201,168,76,.1)','var(--secondary)',$total_trx.' transaksi','Total semua periode'],
@@ -201,7 +207,7 @@ $trx_terbaru = $conn->query("SELECT t.*,k.nama_kategori FROM transaksi t JOIN ka
 </section>
 
 <!-- GRAFIK SLIDESHOW -->
-<section class="pub-sec" style="background:linear-gradient(180deg,#f0f4f0,#e8f5ee);padding-top:44px;padding-bottom:44px" id="grafik-section">
+<section class="pub-sec" style="background:linear-gradient(180deg,#f0f4f8,#e8f0f8);padding-top:44px;padding-bottom:44px" id="grafik-section">
   <div class="container">
     <div style="text-align:center;margin-bottom:24px">
       <div class="sec-tag"><i class="fas fa-chart-bar"></i> Visualisasi Data</div>
@@ -216,12 +222,7 @@ $trx_terbaru = $conn->query("SELECT t.*,k.nama_kategori FROM transaksi t JOIN ka
           <div style="font-size:.76rem;color:var(--text-muted);margin-top:7px" id="slideDesc">Perbandingan 6 bulan terakhir</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:.76rem;color:var(--text-muted)" id="slideCtr">1 / 4</span>
-          <div style="display:flex;gap:6px">
-            <button class="snbtn" onclick="changeSlide(-1)"><i class="fas fa-chevron-left"></i></button>
-            <button class="snbtn" onclick="togglePause()"><i class="fas fa-pause" id="pauseIco"></i></button>
-            <button class="snbtn" onclick="changeSlide(1)"><i class="fas fa-chevron-right"></i></button>
-          </div>
+          <span style="font-size:.72rem;color:rgba(255,255,255,.6);background:rgba(255,255,255,.1);padding:3px 10px;border-radius:99px" id="slideCtr">1 / 4</span>
         </div>
       </div>
       <div class="grafik-slide active" id="slide-0"><div style="position:relative;height:280px"><canvas id="barChart"></canvas></div></div>
@@ -258,7 +259,7 @@ $trx_terbaru = $conn->query("SELECT t.*,k.nama_kategori FROM transaksi t JOIN ka
       <?php if($trx_terbaru->num_rows): while($r=$trx_terbaru->fetch_assoc()):
         $isMasuk = $r['jenis']==='masuk'; ?>
       <div class="trx-row">
-        <div class="ti" style="background:<?= $isMasuk?'rgba(16,185,129,.1)':'rgba(239,68,68,.1)' ?>;color:<?= $isMasuk?'var(--success)':'var(--danger)' ?>">
+        <div class="ti" style="background:<?= $isMasuk?'rgba(59,130,246,.1)':'rgba(239,68,68,.1)' ?>;color:<?= $isMasuk?'var(--success)':'var(--danger)' ?>">
           <i class="fas fa-arrow-<?= $isMasuk?'down':'up' ?>"></i>
         </div>
         <div style="flex:1;min-width:0">
@@ -283,7 +284,7 @@ $trx_terbaru = $conn->query("SELECT t.*,k.nama_kategori FROM transaksi t JOIN ka
 </section>
 
 <!-- FITUR TRANSPARANSI -->
-<section class="pub-sec" style="background:linear-gradient(135deg,#f0f7f2,#e8f5ee);padding-top:44px;padding-bottom:44px">
+<section class="pub-sec" style="background:linear-gradient(135deg,#f0f5fa,#e8f0f8);padding-top:44px;padding-bottom:44px">
   <div class="container">
     <div style="text-align:center;margin-bottom:28px">
       <div class="sec-tag"><i class="fas fa-shield-alt"></i> Komitmen</div>
@@ -292,10 +293,10 @@ $trx_terbaru = $conn->query("SELECT t.*,k.nama_kategori FROM transaksi t JOIN ka
     </div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px" class="g3">
       <?php $fiturs=[
-        ['fas fa-eye','rgba(26,122,74,.1)','var(--primary)','Keterbukaan','Seluruh transaksi dapat diakses jamaah secara langsung.'],
+        ['fas fa-eye','rgba(30,110,181,.1)','var(--primary)','Keterbukaan','Seluruh transaksi dapat diakses jamaah secara langsung.'],
         ['fas fa-chart-pie','rgba(201,168,76,.1)','var(--secondary)','Visualisasi Data','Grafik interaktif yang mudah dipahami semua kalangan.'],
         ['fas fa-file-alt','rgba(59,130,246,.1)','var(--info)','Laporan Berkala','Tersedia laporan harian, bulanan, dan tahunan.'],
-        ['fas fa-shield-alt','rgba(26,122,74,.1)','var(--primary)','Terverifikasi','Setiap transaksi dicatat pengurus yang bertanggung jawab.'],
+        ['fas fa-shield-alt','rgba(30,110,181,.1)','var(--primary)','Terverifikasi','Setiap transaksi dicatat pengurus yang bertanggung jawab.'],
         ['fas fa-clock','rgba(201,168,76,.1)','var(--secondary)','Real-time','Informasi saldo diperbarui secara langsung.'],
         ['fas fa-mobile-alt','rgba(59,130,246,.1)','var(--info)','Akses HP','Bisa diakses dari perangkat apapun kapan saja.'],
       ]; foreach($fiturs as $i=>[$ico,$bg,$clr,$ttl,$dsc]): ?>
@@ -313,19 +314,19 @@ $trx_terbaru = $conn->query("SELECT t.*,k.nama_kategori FROM transaksi t JOIN ka
 
 <script>
 Chart.defaults.font.family="'Poppins',sans-serif";
-Chart.defaults.plugins.tooltip.backgroundColor='rgba(15,61,38,.93)';
+Chart.defaults.plugins.tooltip.backgroundColor='rgba(15,45,74,.93)';
 Chart.defaults.plugins.tooltip.titleColor='#fff';
 Chart.defaults.plugins.tooltip.bodyColor='rgba(255,255,255,.85)';
 Chart.defaults.plugins.tooltip.padding=12;
 Chart.defaults.plugins.tooltip.cornerRadius=8;
 const fmtRp=v=>'Rp '+new Intl.NumberFormat('id-ID').format(v);
-const CG=['#1a7a4a','#22a05e','#c9a84c','#3b82f6','#f59e0b','#8b5cf6','#ec4899','#14b8a6'];
+const CG=['#1e6eb5','#2d86d4','#c9a84c','#3b82f6','#f59e0b','#8b5cf6','#ec4899','#14b8a6'];
 const CR=['#ef4444','#f87171','#dc2626','#b91c1c','#fca5a5','#ff8080','#fecaca','#c53030'];
 
 new Chart(document.getElementById('barChart').getContext('2d'),{
   type:'bar',
   data:{labels:<?=json_encode($chart_labels)?>,datasets:[
-    {label:'Pemasukan',data:<?=json_encode($chart_masuk)?>,backgroundColor:'rgba(26,122,74,.85)',borderRadius:7,borderSkipped:false},
+    {label:'Pemasukan',data:<?=json_encode($chart_masuk)?>,backgroundColor:'rgba(30,110,181,.85)',borderRadius:7,borderSkipped:false},
     {label:'Pengeluaran',data:<?=json_encode($chart_keluar)?>,backgroundColor:'rgba(239,68,68,.75)',borderRadius:7,borderSkipped:false}
   ]},
   options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
@@ -338,9 +339,9 @@ new Chart(document.getElementById('lineChart').getContext('2d'),{
   type:'line',
   data:{labels:<?=json_encode($line_labels)?>,datasets:[{
     label:'Saldo Kumulatif',data:<?=json_encode($line_saldo)?>,
-    borderColor:'#1a7a4a',backgroundColor:'rgba(26,122,74,.08)',
+    borderColor:'#1e6eb5',backgroundColor:'rgba(30,110,181,.08)',
     borderWidth:3,fill:true,tension:.4,
-    pointBackgroundColor:'#1a7a4a',pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:5,pointHoverRadius:8
+    pointBackgroundColor:'#1e6eb5',pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:5,pointHoverRadius:8
   }]},
   options:{responsive:true,maintainAspectRatio:false,
     plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` Saldo: ${fmtRp(c.raw)}`}}},

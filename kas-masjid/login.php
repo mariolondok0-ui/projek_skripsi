@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Login Admin – <?= APP_NAME ?></title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=<?= time() ?>">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=1786264272?v=<?= time() ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 /* ===== LOGIN PAGE ===== */
@@ -40,7 +40,7 @@ html, body { height: 100%; }
 
 .login-bg {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0b2e1c 0%, #1a7a4a 50%, #0d9488 100%);
+  background: linear-gradient(135deg, #0a1f35 0%, #1e6eb5 50%, #5ba3d9 100%);
   background-size: 200% 200%;
   animation: gradientShift 10s ease infinite;
   display: flex; align-items: center; justify-content: center;
@@ -74,7 +74,7 @@ html, body { height: 100%; }
 
 /* Left panel */
 .login-left {
-  background: linear-gradient(145deg, #0b2e1c 0%, #1a7a4a 100%);
+  background: linear-gradient(145deg, #0a1f35 0%, #1e6eb5 100%);
   padding: 48px 36px;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
@@ -153,7 +153,7 @@ html, body { height: 100%; }
 .inp-wrap { position: relative; }
 .inp-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: .9rem; z-index: 1; pointer-events: none; }
 .inp { width: 100%; padding: 13px 14px 13px 42px; border: 1.5px solid var(--border); border-radius: 12px; font-size: .9rem; color: var(--text-primary); font-family: inherit; background: #fff; transition: all .2s; }
-.inp:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,122,74,.1); outline: none; }
+.inp:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30,110,181,.1); outline: none; }
 .inp::placeholder { color: var(--text-muted); }
 .inp-pw { padding-right: 46px; }
 .pw-toggle { position: absolute; right: 13px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: .9rem; padding: 4px; transition: color .15s; }
@@ -166,10 +166,10 @@ html, body { height: 100%; }
   font-size: .95rem; font-weight: 700;
   font-family: inherit; cursor: pointer;
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  box-shadow: 0 6px 20px rgba(26,122,74,.35);
+  box-shadow: 0 6px 20px rgba(30,110,181,.35);
   transition: all .25s; margin-top: 8px;
 }
-.btn-login:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(26,122,74,.45); }
+.btn-login:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(30,110,181,.45); }
 .btn-login:active { transform: scale(.98); }
 
 .login-footer {
@@ -185,8 +185,8 @@ html, body { height: 100%; }
 .back-link:hover { color: var(--primary); }
 .demo-box {
   margin-top: 14px; padding: 12px 16px;
-  background: linear-gradient(135deg, rgba(26,122,74,.06), rgba(13,148,136,.06));
-  border: 1px solid rgba(26,122,74,.15);
+  background: linear-gradient(135deg, rgba(30,110,181,.06), rgba(13,148,136,.06));
+  border: 1px solid rgba(30,110,181,.15);
   border-radius: 10px; font-size: .78rem; color: var(--text-secondary);
 }
 
@@ -245,7 +245,7 @@ html, body { height: 100%; }
     <!-- RIGHT PANEL -->
     <div class="login-right">
       <div class="lr-head">
-        <h2>Masuk Admin</h2>
+        <h2>Login Admin</h2>
         <p>Masukkan kredensial akun Anda untuk mengakses sistem</p>
       </div>
 
@@ -264,7 +264,7 @@ html, body { height: 100%; }
           <div class="inp-wrap">
             <i class="fas fa-envelope inp-icon"></i>
             <input type="email" name="email" class="inp"
-                   placeholder="admin@masjid.com"
+                   placeholder="Masukan email"
                    value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
                    required autocomplete="email">
           </div>
@@ -285,7 +285,7 @@ html, body { height: 100%; }
 
         <!-- Submit -->
         <button type="submit" class="btn-login" id="loginBtn">
-          <span id="btnText"><i class="fas fa-sign-in-alt"></i> Masuk ke Sistem</span>
+          <span id="btnText"><i class="fas fa-sign-in-alt"></i> Masuk</span>
           <span id="btnLoad" style="display:none"><span class="spinner"></span> Memproses...</span>
         </button>
 
@@ -297,7 +297,7 @@ html, body { height: 100%; }
         </a>
         <div class="demo-box">
           <i class="fas fa-info-circle" style="color:var(--info);margin-right:5px"></i>
-          Demo: <strong>admin@masjid.com</strong> &nbsp;/&nbsp; <strong>password</strong>
+          Demo: <strong>Masukan email</strong> &nbsp;/&nbsp; <strong>password</strong>
         </div>
       </div>
     </div>
