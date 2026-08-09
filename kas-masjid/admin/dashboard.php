@@ -493,11 +493,27 @@ function resetProgress() {
 }
 function togglePause() {
   paused=!paused;
-  const ico=document.getElementById('pauseIcon');
-  if(paused){ ico.className='fas fa-play'; clearTimeout(timer); const w=getComputedStyle(progress).width; progress.style.transition='none'; progress.style.width=w; }
-  else { ico.className='fas fa-pause'; startAuto(); resetProgress(); }
+  if(paused){
+    clearTimeout(timer);
+    const w=getComputedStyle(progress).width;
+    progress.style.transition='none';
+    progress.style.width=w;
+    progress.style.opacity='0.4';
+  } else {
+    progress.style.opacity='1';
+    startAuto();
+    resetProgress();
+  }
 }
 startAuto(); resetProgress();
+
+// ✅ Klik area grafik = pause/play
+document.querySelectorAll('.grafik-slide').forEach(el => {
+  el.style.cursor = 'pointer';
+  el.addEventListener('click', function(e) {
+    if (!e.target.closest('.slide-dot,a,button,.pie-legend-item')) togglePause();
+  });
+});
 
 // Sidebar toggle
 const sidebar=document.getElementById('adminSidebar');

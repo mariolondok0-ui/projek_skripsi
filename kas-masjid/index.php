@@ -404,11 +404,26 @@ function resetProg(){
   if(!paused)setTimeout(()=>{spBar.style.transition=`width ${DUR}ms linear`;spBar.style.width='100%';},30);
 }
 function togglePause(){
-  paused=!paused;const i=document.getElementById('pauseIco');
-  if(paused){i.className='fas fa-play';clearTimeout(timer);const w=getComputedStyle(spBar).width;spBar.style.transition='none';spBar.style.width=w;}
-  else{i.className='fas fa-pause';startAuto();resetProg();}
+  paused=!paused;
+  if(paused){
+    clearTimeout(timer);
+    const w=getComputedStyle(spBar).width;
+    spBar.style.transition='none';
+    spBar.style.width=w;
+    // Tampilkan visual pause pada progress bar
+    spBar.style.opacity='0.4';
+  } else {
+    spBar.style.opacity='1';
+    startAuto();
+    resetProg();
+  }
 }
 startAuto();resetProg();
+
+// ✅ Klik area slideshow = pause/play
+document.getElementById('grafik-section').addEventListener('click', function(e){
+  if(!e.target.closest('.sdot,.pleg,a,button')) togglePause();
+});
 
 // Navbar toggle
 document.getElementById('navToggle').addEventListener('click',()=>document.getElementById('navLinks').classList.toggle('open'));
