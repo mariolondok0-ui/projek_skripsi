@@ -6,24 +6,23 @@ $admin_init = strtoupper(substr($admin_name, 0, 1));
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 <aside class="sidebar" id="adminSidebar">
   <div class="sidebar-header">
-    <div class="sidebar-logo">
-      <i class="fas fa-mosque"></i>
+    <!-- Icon Masjid Diubah ke Style Kotak Kuning/Emas -->
+    <div class="sidebar-logo" style="background-color: #d4af37; width: 45px; height: 45px; border-radius: 12px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);">
+      <i class="fas fa-mosque" style="color: #ffffff; font-size: 22px;"></i>
     </div>
     <div class="sidebar-brand">
       <h3>Kas Masjid</h3>
-      <p>Baiturrohman</p>
+      <p>Baeturrohman</p>
     </div>
   </div>
 
   <nav class="sidebar-nav">
 
-    <div class="nav-section-label">Menu Utama</div>
     <a href="<?= APP_URL ?>/admin/dashboard.php"
        class="nav-item <?= $current=='dashboard.php'?'active':'' ?>">
       <span class="nav-icon"><i class="fas fa-tachometer-alt"></i></span> Dashboard
     </a>
 
-    <div class="nav-section-label">Keuangan</div>
     <a href="<?= APP_URL ?>/admin/kas-masuk.php"
        class="nav-item <?= $current=='kas-masuk.php'?'active':'' ?>">
       <span class="nav-icon"><i class="fas fa-arrow-circle-down"></i></span> Kas Masuk
@@ -33,13 +32,11 @@ $admin_init = strtoupper(substr($admin_name, 0, 1));
       <span class="nav-icon"><i class="fas fa-arrow-circle-up"></i></span> Kas Keluar
     </a>
 
-    <div class="nav-section-label">Laporan</div>
     <a href="<?= APP_URL ?>/admin/laporan.php"
        class="nav-item <?= $current=='laporan.php'?'active':'' ?>">
       <span class="nav-icon"><i class="fas fa-file-invoice-dollar"></i></span> Laporan
     </a>
 
-    <div class="nav-section-label">Kategori</div>
     <a href="<?= APP_URL ?>/admin/kategori.php"
        class="nav-item <?= $current=='kategori.php'?'active':'' ?>">
       <span class="nav-icon"><i class="fas fa-tags"></i></span> Kategori
@@ -60,7 +57,6 @@ $admin_init = strtoupper(substr($admin_name, 0, 1));
     }
     ?>
 
-    <div class="nav-section-label">Pengaturan</div>
     <a href="<?= APP_URL ?>/admin/profil.php"
        class="nav-item <?= $current=='profil.php'?'active':'' ?>">
       <span class="nav-icon"><i class="fas fa-user-circle"></i></span> Profil
@@ -69,14 +65,16 @@ $admin_init = strtoupper(substr($admin_name, 0, 1));
        class="nav-item <?= $current=='ubah-password.php'?'active':'' ?>">
       <span class="nav-icon"><i class="fas fa-shield-alt"></i></span> Keamanan
     </a>
-<a href="<?= APP_URL ?>/admin/tempat-sampah.php"
+    
+    <!-- Perbaikan icon Riwayat ditambahkan class nav-icon agar sejajar -->
+    <a href="<?= APP_URL ?>/admin/tempat-sampah.php"
        class="nav-item <?= $current=='tempat-sampah.php'?'active':'' ?>">
-      <span class="nav-icon"><i class="fas fa-trash-alt"></i></span>
-      Riwayat
+      <span class="nav-icon"><i class="fas fa-history"></i></span> Riwayat
       <?php if ($jml_sampah > 0): ?>
       <span class="nav-badge"><?= $jml_sampah ?></span>
       <?php endif; ?>
     </a>
+    
     <div class="nav-section-label">Publik</div>
     <a href="<?= APP_URL ?>/index.php" target="_blank" class="nav-item">
       <span class="nav-icon"><i class="fas fa-external-link-alt"></i></span> Lihat Halaman Publik

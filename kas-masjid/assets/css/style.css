@@ -579,3 +579,90 @@ a:hover { color: #1e6eb5; }
 
 /* Footer sidebar */
 .pub-footer { background: #0f2d4a !important; }
+
+/* =========================================
+   DARK MODE GLOBAL (ADMIN & PUBLIK)
+   ========================================= */
+body.dark-mode {
+  background-color: #0f172a !important; /* Warna gelap navy ala Tailwind */
+  color: #f8fafc !important;
+}
+
+/* Modifikasi Konten Utama */
+body.dark-mode .main-content,
+body.dark-mode .container-fluid {
+  background-color: #0f172a !important;
+}
+
+/* Teks dan Heading */
+body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, 
+body.dark-mode h4, body.dark-mode h5, body.dark-mode h6,
+body.dark-mode p, body.dark-mode span, body.dark-mode label,
+body.dark-mode .text-muted {
+  color: #cbd5e1 !important;
+}
+
+/* Card / Kotak Konten */
+body.dark-mode .card,
+body.dark-mode .stat-card,
+body.dark-mode .box {
+  background-color: #1e293b !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
+  color: #f8fafc !important;
+}
+body.dark-mode .card-header {
+  border-bottom: 1px solid #334155 !important;
+  background-color: transparent !important;
+}
+
+/* Tabel Admin */
+body.dark-mode table,
+body.dark-mode .table {
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+body.dark-mode .table thead th {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+body.dark-mode .table td {
+  border-color: #334155 !important;
+  background-color: #1e293b !important;
+}
+body.dark-mode .table tbody tr:hover td {
+  background-color: #334155 !important;
+}
+
+/* Form Input & Select */
+body.dark-mode .form-control,
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+  background-color: #0f172a !important;
+  border: 1px solid #475569 !important;
+  color: #f8fafc !important;
+}
+body.dark-mode .form-control:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Modal Pop-up */
+body.dark-mode .modal,
+body.dark-mode .modal-content {
+  background-color: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+body.dark-mode .modal-header,
+body.dark-mode .modal-footer {
+  border-color: #334155 !important;
+}
+
+/* Agar Navbar atas (jika ada di admin) ikut gelap */
+body.dark-mode .topbar,
+body.dark-mode .navbar {
+  background-color: #1e293b !important;
+  border-bottom: 1px solid #334155 !important;
+}

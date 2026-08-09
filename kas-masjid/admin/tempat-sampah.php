@@ -261,7 +261,7 @@ select.form-select option {
 
       <!-- Baris Bawah: Deskripsi -->
       <p style="font-size:0.82rem; color:var(--text-muted); margin:0; line-height:1.5;">
-        Data yang dihapus tersimpan di sini — bisa dipulihkan atau dihapus permanen
+        Data yang dihapus tersimpan di sini bisa dipulihkan atau dihapus permanen
       </p>
       
     </div>
@@ -337,7 +337,7 @@ select.form-select option {
       <table class="table table-striped">
         <thead>
           <tr>
-            <th>#</th>
+            <th>No</th>
             <th style="white-space:nowrap;">Tanggal</th>
             <th>Keterangan</th>
             <th>Kategori</th>

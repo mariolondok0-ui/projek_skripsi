@@ -119,7 +119,7 @@ $saldo_total = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM tra
     <a href="<?= APP_URL ?>/index.php"
        style="display:inline-flex;align-items:center;gap:7px;color:rgba(255,255,255,.75);font-size:.82rem;font-weight:500;transition:color .15s;text-decoration:none"
        onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.75)'">
-      <i class="fas fa-arrow-left"></i> Kembali ke Beranda
+      <i class="fas fa-arrow-left"></i> Kembali
     </a>
     <div style="margin-top:14px">
       <div style="display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.15);color:rgba(255,255,255,.9);padding:5px 14px;border-radius:99px;font-size:.78rem;font-weight:600;border:1px solid rgba(255,255,255,.2)">

@@ -136,7 +136,7 @@ $trx_terbaru = $conn->query("SELECT t.*,k.nama_kategori FROM transaksi t JOIN ka
           Transparansi Keuangan<br><span style="color: #f6d365;">Kas Masjid</span> untuk Jamaah
       </h1>
       <p class="hero-desc" style="color: #f8fafc; text-shadow: 1px 1px 4px rgba(0,0,0,0.8);">
-          Pantau pemasukan, pengeluaran, dan saldo kas masjid secara real-time. Informasi terbuka dan dapat diakses oleh seluruh jamaah kapan saja.
+          Pantau pemasukan, pengeluaran, dan saldo kas masjid secara real time. Informasi terbuka dan dapat diakses oleh seluruh jamaah kapan saja.
       </p>
     </div>
     
@@ -155,7 +155,7 @@ $trx_terbaru = $conn->query("SELECT t.*,k.nama_kategori FROM transaksi t JOIN ka
     <div style="text-align:center;margin-bottom:28px">
       <div class="sec-tag"><i class="fas fa-wallet"></i> Ringkasan Keuangan</div>
       <h2 class="sec-h">Kondisi Kas <span>Saat Ini</span></h2>
-      <p class="sec-sub">Data real-time keuangan <?= MASJID_NAME ?> untuk seluruh jamaah</p>
+      <p class="sec-sub">Data real time keuangan <?= MASJID_NAME ?> untuk seluruh jamaah</p>
     </div>
     <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:20px;align-items:start" class="g2">
       <!-- Saldo Card -->
@@ -212,7 +212,7 @@ $trx_terbaru = $conn->query("SELECT t.*,k.nama_kategori FROM transaksi t JOIN ka
     <div style="text-align:center;margin-bottom:24px">
       <div class="sec-tag"><i class="fas fa-chart-bar"></i> Visualisasi Data</div>
       <h2 class="sec-h">Grafik <span>Keuangan Masjid</span></h2>
-      <p class="sec-sub">Grafik interaktif berganti otomatis setiap 10 detik – klik panah atau dot untuk navigasi</p>
+      <p class="sec-sub">Grafik interaktif berganti otomatis </p>
     </div>
     <div class="card animate-fadeIn" style="padding:22px">
       <div class="sp-wrap"><div class="sp-bar" id="spBar"></div></div>
