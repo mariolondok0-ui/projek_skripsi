@@ -2,488 +2,500 @@
 require_once '../includes/config.php';
 requireLogin();
 
-// Handle POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $id            = (int)($_POST['id'] ?? 0);
-    $nama_kategori = sanitize($_POST['nama_kategori'] ?? '');
-    $jenis         = sanitize($_POST['jenis'] ?? '');
-    if (empty($nama_kategori) || !in_array($jenis, ['masuk','keluar'])) {
-        setAlert('danger', 'Nama kategori dan jenis wajib diisi.');
-    } else {
-        if ($id > 0) {
-            $stmt = $conn->prepare("UPDATE kategori SET nama_kategori=?, jenis=? WHERE id=?");
-            $stmt->bind_param('ssi', $nama_kategori, $jenis, $id);
-            $stmt->execute();
-            setAlert('success', 'Kategori berhasil diperbarui.');
-        } else {
-            $stmt = $conn->prepare("INSERT INTO kategori (nama_kategori, jenis) VALUES (?,?)");
-            $stmt->bind_param('ss', $nama_kategori, $jenis);
-            $stmt->execute();
-            setAlert('success', 'Kategori berhasil ditambahkan.');
-        }
-    }
-    redirect(APP_URL.'/admin/kategori.php');
+// Fungsi Helper Tanggal Indonesia
+function tgl_indo_kat($tanggal) {
+    if (empty($tanggal) || $tanggal == '0000-00-00') return '-';
+    $bulan = [
+        1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    $ts = strtotime($tanggal);
+    $tgl = date('d', $ts);
+    $bln = $bulan[(int)date('m', $ts)];
+    $thn = date('Y', $ts);
+    return "$tgl $bln $thn";
 }
 
-// Handle DELETE
-if (isset($_GET['delete'])) {
-    $id   = (int)$_GET['delete'];
-    $used = (int)$conn->query("SELECT COUNT(*) as c FROM transaksi WHERE kategori_id=$id")->fetch_assoc()['c'];
-    if ($used > 0) {
-        setAlert('danger', 'Kategori tidak dapat dihapus karena masih digunakan oleh '.$used.' transaksi.');
+// Proses Tambah / Edit Kategori
+$alert = getAlert();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? 'add';
+    $nama   = sanitize($_POST['nama_kategori'] ?? '');
+    $jenis  = sanitize($_POST['jenis'] ?? 'masuk');
+    $id     = (int)($_POST['id'] ?? 0);
+
+    if (empty($nama)) {
+        setAlert('error', 'Nama kategori tidak boleh kosong.');
+    } else {
+        if ($action === 'edit' && $id > 0) {
+            $conn->query("UPDATE kategori SET nama_kategori='$nama', jenis='$jenis' WHERE id=$id");
+            setAlert('success', 'Kategori berhasil diperbarui.');
+        } else {
+            $conn->query("INSERT INTO kategori (nama_kategori, jenis) VALUES ('$nama', '$jenis')");
+            setAlert('success', 'Kategori baru berhasil ditambahkan.');
+        }
+    }
+    redirect(APP_URL . '/admin/kategori.php');
+}
+
+// Proses Hapus Kategori
+if (isset($_GET['hapus'])) {
+    $id = (int)$_GET['hapus'];
+    $cek = $conn->query("SELECT COUNT(*) as c FROM transaksi WHERE kategori_id=$id AND deleted_at IS NULL")->fetch_assoc()['c'];
+    if ($cek > 0) {
+        setAlert('error', 'Kategori tidak dapat dihapus karena sedang digunakan oleh data transaksi.');
     } else {
         $conn->query("DELETE FROM kategori WHERE id=$id");
         setAlert('success', 'Kategori berhasil dihapus.');
     }
-    redirect(APP_URL.'/admin/kategori.php');
+    redirect(APP_URL . '/admin/kategori.php');
 }
 
-// Edit prefill
-$edit_data = null;
-if (isset($_GET['edit'])) {
-    $id = (int)$_GET['edit'];
-    $edit_data = $conn->query("SELECT * FROM kategori WHERE id=$id")->fetch_assoc();
-}
+// Ambil Data Kategori
+$kat_masuk  = $conn->query("SELECT k.*, (SELECT COUNT(*) FROM transaksi t WHERE t.kategori_id=k.id AND t.deleted_at IS NULL) as jml FROM kategori k WHERE k.jenis='masuk' ORDER BY k.nama_kategori ASC");
+$kat_keluar = $conn->query("SELECT k.*, (SELECT COUNT(*) FROM transaksi t WHERE t.kategori_id=k.id AND t.deleted_at IS NULL) as jml FROM kategori k WHERE k.jenis='keluar' ORDER BY k.nama_kategori ASC");
 
-$list_masuk  = $conn->query("SELECT k.*, COUNT(t.id) as jml FROM kategori k LEFT JOIN transaksi t ON t.kategori_id=k.id WHERE k.jenis='masuk'  GROUP BY k.id ORDER BY k.nama_kategori");
-$list_keluar = $conn->query("SELECT k.*, COUNT(t.id) as jml FROM kategori k LEFT JOIN transaksi t ON t.kategori_id=k.id WHERE k.jenis='keluar' GROUP BY k.id ORDER BY k.nama_kategori");
-$total_masuk  = $list_masuk->num_rows;
-$total_keluar = $list_keluar->num_rows;
-$alert = getAlert();
+$jml_masuk  = $conn->query("SELECT COUNT(*) as c FROM kategori WHERE jenis='masuk'")->fetch_assoc()['c'];
+$jml_keluar = $conn->query("SELECT COUNT(*) as c FROM kategori WHERE jenis='keluar'")->fetch_assoc()['c'];
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Kategori – <?= APP_NAME ?></title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=1786264272">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Kategori Transaksi – <?= APP_NAME ?></title>
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=<?= time() ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<!-- FONT MODERN: Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* ===== KATEGORI PAGE ===== */
-.cat-hero {
-  background: linear-gradient(135deg,#0f2d4a 0%,#1e6eb5 60%,#5ba3d9 100%);
-  border-radius: var(--radius-xl);
-  padding: 24px 22px;
-  color: #fff;
-  display: flex; align-items: center; gap: 18px;
-  position: relative; overflow: hidden;
-  margin-bottom: 24px;
+/* =======================================================
+   STYLING POP-UP MODAL KATEGORI MODERN
+   ======================================================= */
+.modern-modal-overlay {
+  position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px); z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; opacity: 0; visibility: hidden; transition: all 0.3s ease;
 }
-.cat-hero::before {
-  content:''; position:absolute; top:-30px; right:-30px;
-  width:110px; height:110px; background:rgba(255,255,255,.07); border-radius:50%;
+.modern-modal-overlay.active { opacity: 1; visibility: visible; }
+.modern-modal-box {
+  background: #ffffff; border-radius: 16px; width: 100%; max-width: 480px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: scale(0.95) translateY(10px); transition: all 0.3s ease;
+  overflow: hidden; border: none; font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
-.cat-hero-icon {
-  width:56px; height:56px; flex-shrink:0;
-  background:rgba(255,255,255,.15);
-  border:2px solid rgba(255,255,255,.3);
-  border-radius:16px;
-  display:flex; align-items:center; justify-content:center;
-  font-size:1.4rem;
-}
-.cat-stat {
-  background:rgba(255,255,255,.12);
-  border:1px solid rgba(255,255,255,.2);
-  border-radius:var(--radius);
-  padding:8px 14px;
-  text-align:center;
-}
-.cat-stat .cs-val { font-size:1.2rem; font-weight:800; }
-.cat-stat .cs-lbl { font-size:.7rem; opacity:.75; margin-top:1px; }
+.modern-modal-overlay.active .modern-modal-box { transform: scale(1) translateY(0); }
 
-/* Form Card */
-.kat-card {
-  background:var(--bg-card);
-  border-radius:var(--radius-xl);
-  box-shadow:var(--shadow);
-  border:1px solid var(--border-light);
-  overflow:hidden;
-  margin-bottom:20px;
+.modern-modal-header {
+  padding: 20px 24px; background: #ffffff; 
+  border-bottom: 1px solid #e2e8f0; 
+  display: flex; align-items: center; justify-content: space-between;
 }
-.kat-card-header {
-  padding:16px 20px;
-  border-bottom:1px solid var(--border-light);
-  display:flex; align-items:center; justify-content:space-between;
-  background:var(--bg-main);
+.modern-modal-title { 
+  font-size: 1.1rem; font-weight: 700; color: var(--primary); 
+  display: flex; align-items: center; gap: 10px;
+  letter-spacing: -0.2px;
 }
-.kat-card-title {
-  display:flex; align-items:center; gap:10px;
-  font-size:.9rem; font-weight:700; color:var(--text-primary);
+.modern-modal-close {
+  width: 32px; height: 32px; background: transparent; border: none;
+  display: flex; align-items: center; justify-content: center; 
+  color: #94a3b8; font-size: 1.25rem; cursor: pointer; transition: 0.2s;
 }
-.kat-card-title .kct-icon {
-  width:32px; height:32px; border-radius:var(--radius-sm);
-  display:flex; align-items:center; justify-content:center;
-  font-size:.85rem; color:#fff;
-}
-.kat-card-body { padding:20px; }
+.modern-modal-close:hover { color: #0f172a; }
 
-/* Radio Jenis */
-.jenis-radio {
-  display:flex; gap:12px; flex-wrap:wrap;
-}
-.jenis-label {
-  flex:1; min-width:130px;
-  display:flex; align-items:center; gap:8px;
-  padding:12px 14px;
-  border:2px solid var(--border);
-  border-radius:var(--radius);
-  cursor:pointer;
-  transition:var(--transition-fast);
-  font-size:.875rem; font-weight:600;
-}
-.jenis-label:hover { border-color:var(--border); background:var(--bg-main); }
-.jenis-label.selected-masuk  { border-color:var(--info); background:rgba(59,130,246,.06); }
-.jenis-label.selected-keluar { border-color:var(--danger);  background:rgba(239,68,68,.06); }
+.modern-modal-body { padding: 24px; background: #ffffff; }
 
-/* Kategori List Item */
-.kat-item {
-  display:flex; align-items:center; gap:12px;
-  padding:12px 16px;
-  border-bottom:1px solid var(--border-light);
-  transition:var(--transition-fast);
+.modern-modal-body .form-label { 
+    font-size: 0.85rem; font-weight: 600; color: #334155; 
+    margin-bottom: 8px; display: block;
 }
-.kat-item:last-child { border-bottom:none; }
-.kat-item:hover { background:var(--bg-main); }
-.kat-item-dot {
-  width:10px; height:10px; border-radius:50%; flex-shrink:0;
+.modern-modal-body .form-control { 
+    background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; 
+    padding: 10px 14px; font-size: 0.9rem; font-weight: 500; color: #0f172a;
+    width: 100%; font-family: 'Plus Jakarta Sans', sans-serif !important;
+    transition: 0.2s;
 }
-.kat-item-name {
-  flex:1; font-size:.875rem; font-weight:500; color:var(--text-primary);
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+.modern-modal-body .form-control:focus { 
+    background-color: #ffffff; border-color: var(--primary); 
+    box-shadow: 0 0 0 3px rgba(30,110,181,0.15); outline: none;
 }
-.kat-item-actions { display:flex; gap:6px; flex-shrink:0; }
-.kat-btn {
-  width:32px; height:32px; border-radius:var(--radius-sm);
-  display:flex; align-items:center; justify-content:center;
-  font-size:.8rem; cursor:pointer; border:none;
-  transition:var(--transition-fast);
-}
-.kat-btn-edit   { background:rgba(59,130,246,.1); color:var(--info); }
-.kat-btn-edit:hover  { background:var(--info); color:#fff; }
-.kat-btn-del    { background:rgba(239,68,68,.1);  color:var(--danger); }
-.kat-btn-del:hover   { background:var(--danger);  color:#fff; }
-.kat-btn-lock   { background:var(--border-light); color:var(--text-muted); cursor:not-allowed; opacity:.5; }
 
-/* Tab switcher mobile */
-.tab-switcher {
-  display:flex; gap:0; background:var(--bg-main);
-  border-radius:var(--radius); padding:4px;
-  margin-bottom:16px;
+.modern-modal-footer {
+    display: flex; justify-content: flex-end; align-items: center; gap: 12px;
+    margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9;
 }
-.tab-btn {
-  flex:1; padding:8px 12px; border-radius:var(--radius-sm);
-  font-size:.82rem; font-weight:600; cursor:pointer;
-  border:none; background:transparent; color:var(--text-muted);
-  transition:var(--transition-fast); text-align:center;
+.btn-modal-batal {
+    background: #f1f5f9; color: #475569; font-weight: 600; font-size: 0.875rem;
+    border: none; padding: 11px 20px; border-radius: 8px; cursor: pointer; transition: 0.2s;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
-.tab-btn.active { background:var(--bg-card); color:var(--text-primary); box-shadow:var(--shadow-sm); }
+.btn-modal-batal:hover { background: #e2e8f0; color: #0f172a; }
 
-@media (max-width:768px) {
-  .cat-hero { flex-direction:column; text-align:center; gap:14px; }
-  .cat-hero-icon { margin:0 auto; }
-  .kat-layout { grid-template-columns:1fr !important; }
+.btn-modal-simpan {
+    background: var(--primary); color: #ffffff; font-weight: 600; font-size: 0.875rem;
+    border: none; padding: 11px 22px; border-radius: 8px; cursor: pointer; transition: 0.2s;
+    display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(30,110,181,0.3);
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+.btn-modal-simpan:hover { background: var(--primary-dark); transform: translateY(-1px); }
+
+.btn-modal-hapus {
+    background: var(--danger); color: #ffffff; font-weight: 600; font-size: 0.875rem;
+    border: none; padding: 11px 22px; border-radius: 8px; cursor: pointer; transition: 0.2s;
+    display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);
+    text-decoration: none; font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+.btn-modal-hapus:hover { background: #dc2626; transform: translateY(-1px); color: #ffffff; }
+
+/* Tab Navigasi Kategori Model Kapsul Sejajar */
+.kat-tab-btn {
+    background: #ffffff; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 99px;
+    font-size: 0.9rem; font-weight: 600; color: #475569; cursor: pointer; display: inline-flex;
+    align-items: center; gap: 10px; transition: 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.kat-tab-btn.active {
+    background: var(--primary); color: #ffffff; border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(30,110,181,0.25);
+}
+
+@media(max-width: 768px) {
+    .admin-main { width: 100% !important; margin-left: 0 !important; }
+    .admin-content { padding: 15px !important; }
 }
 </style>
 </head>
 <body>
 <div class="admin-wrapper">
 <?php include '../includes/partials/sidebar-admin.php'; ?>
-<div class="admin-main">
 
+<div class="admin-main">
   <!-- TOPBAR -->
   <div class="topbar">
-    <div class="topbar-left">
-      <div class="topbar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div id="sidebarToggle" style="cursor:pointer; font-size:1.1rem; color:var(--text-muted);"><i class="fas fa-bars"></i></div>
       <div class="breadcrumb">
-        <span class="bc-item"><i class="fas fa-home"></i></span>
-        <span class="bc-sep"><i class="fas fa-chevron-right"></i></span>
-        <span class="bc-item">Pengaturan</span>
-        <span class="bc-sep"><i class="fas fa-chevron-right"></i></span>
-        <span class="bc-item active">Kategori</span>
+        <i class="fas fa-home"></i> <i class="fas fa-chevron-right" style="font-size:0.6rem; opacity:0.5;"></i> <span class="active">Kategori Transaksi</span>
       </div>
     </div>
     <div class="topbar-right">
-      <div class="topbar-date"><i class="fas fa-calendar-alt"></i> <?= date('d M Y') ?></div>
-    </div>
-  </div>
-
-  <div class="admin-content">
-    <?php if ($alert): ?>
-    <div class="alert alert-<?= $alert['type'] ?>">
-      <i class="fas fa-<?= $alert['type']=='success'?'check-circle':'exclamation-circle' ?>"></i>
-      <?= htmlspecialchars($alert['message']) ?>
-    </div>
-    <?php endif; ?>
-
-    <!-- HERO -->
-    <div class="cat-hero animate-fadeIn">
-      <div class="cat-hero-icon"><i class="fas fa-tags"></i></div>
-      <div style="position:relative;z-index:1;flex:1">
-        <div style="font-size:1.1rem;font-weight:800;margin-bottom:3px">Kelola Kategori</div>
-        <div style="font-size:.8rem;opacity:.8">Atur kategori pemasukan dan pengeluaran kas masjid</div>
-        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
-          <div class="cat-stat">
-            <div class="cs-val"><?= $total_masuk ?></div>
-            <div class="cs-lbl"><i class="fas fa-arrow-down" style="margin-right:3px"></i>Pemasukan</div>
+      <div class="topbar-date"><i class="fas fa-calendar-alt me-1" style="margin-right: 4px;"></i> <?= tgl_indo_kat(date('Y-m-d')) ?></div>
+      
+      <!-- DROPDOWN PROFIL USER -->
+      <div class="user-dropdown-wrapper" id="userDropdownWrap">
+        <div class="topbar-user" id="userDropdownTrigger">
+          <div class="t-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
+          <div class="t-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+        
+        <div class="user-dropdown-menu">
+          <div class="dropdown-header">
+            <div class="d-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
+            <div class="d-info">
+              <div class="d-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
+              <div class="d-role">@admin</div>
+            </div>
           </div>
-          <div class="cat-stat">
-            <div class="cs-val"><?= $total_keluar ?></div>
-            <div class="cs-lbl"><i class="fas fa-arrow-up" style="margin-right:3px"></i>Pengeluaran</div>
-          </div>
-          <div class="cat-stat">
-            <div class="cs-val"><?= $total_masuk + $total_keluar ?></div>
-            <div class="cs-lbl"><i class="fas fa-list" style="margin-right:3px"></i>Total</div>
+          <div class="dropdown-body">
+            <a href="profil.php" class="dropdown-item"><i class="fas fa-user-cog"></i> Pengaturan Akun</a>
+            <a href="#" class="dropdown-item text-danger" onclick="openLogoutModal()"><i class="fas fa-sign-out-alt"></i> Logout</a>
           </div>
         </div>
       </div>
-      <div style="position:relative;z-index:1;flex-shrink:0">
-        <a href="<?= APP_URL ?>/admin/dashboard.php"
-           style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);color:#fff;padding:8px 16px;border-radius:99px;font-size:.78rem;font-weight:600;border:1px solid rgba(255,255,255,.25);text-decoration:none;transition:background .15s"
-           onmouseover="this.style.background='rgba(255,255,255,.25)'"
-           onmouseout="this.style.background='rgba(255,255,255,.15)'">
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="admin-content">
+    <?php if ($alert): ?>
+    <div class="alert alert-<?= $alert['type'] ?>">
+      <i class="fas fa-<?= $alert['type']=='success'?'check-circle':'exclamation-circle' ?>"></i> <?= htmlspecialchars($alert['message']) ?>
+    </div>
+    <?php endif; ?>
+
+    <!-- PAGE HEADER -->
+    <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px;">
+      <div>
+        <h1 class="page-title"><i class="fas fa-tags"></i> Kategori Transaksi</h1>
+        <p class="page-subtitle">Kelola kategori pemasukan dan pengeluaran kas masjid</p>
+      </div>
+
+      <div>
+        <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn" style="background:#ffffff; color:var(--text-main); border:1px solid #cbd5e1; font-weight:600;">
           <i class="fas fa-arrow-left"></i> Kembali
         </a>
       </div>
     </div>
 
-    <!-- LAYOUT: Form + Daftar -->
-    <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:20px;align-items:start" class="kat-layout">
-
-      <!-- ===== FORM ===== -->
-      <div class="kat-card animate-fadeIn delay-1">
-        <div class="kat-card-header">
-          <div class="kat-card-title">
-            <div class="kct-icon" style="background:<?= $edit_data?'var(--warning)':'var(--primary)' ?>">
-              <i class="fas fa-<?= $edit_data?'edit':'plus' ?>"></i>
-            </div>
-            <?= $edit_data ? 'Edit Kategori' : 'Tambah Kategori' ?>
-          </div>
-          <?php if ($edit_data): ?>
-          <a href="kategori.php" class="btn btn-ghost btn-sm"><i class="fas fa-times"></i> Batal</a>
-          <?php endif; ?>
-        </div>
-        <div class="kat-card-body">
-          <form method="POST" id="formKategori">
-            <?php if ($edit_data): ?><input type="hidden" name="id" value="<?= $edit_data['id'] ?>"><?php endif; ?>
-
-            <div class="form-group">
-              <label class="form-label">Nama Kategori <span class="required">*</span></label>
-              <div class="input-group">
-                <i class="fas fa-tag input-icon"></i>
-                <input type="text" name="nama_kategori" class="form-control"
-                       id="inputNama"
-                       placeholder="Contoh: Infak Jumat"
-                       value="<?= htmlspecialchars($edit_data['nama_kategori'] ?? '') ?>" required>
-              </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom:20px">
-              <label class="form-label">Jenis Kategori <span class="required">*</span></label>
-              <div class="jenis-radio">
-                <label class="jenis-label <?= ($edit_data['jenis']??'masuk')=='masuk'?'selected-masuk':'' ?>" id="lblMasuk">
-                  <input type="radio" name="jenis" value="masuk"
-                         <?= ($edit_data['jenis']??'masuk')=='masuk'?'checked':'' ?>
-                         style="accent-color:var(--info)">
-                  <i class="fas fa-arrow-down" style="color:var(--info)"></i>
-                  Kas Masuk
-                </label>
-                <label class="jenis-label <?= ($edit_data['jenis']??'')=='keluar'?'selected-keluar':'' ?>" id="lblKeluar">
-                  <input type="radio" name="jenis" value="keluar"
-                         <?= ($edit_data['jenis']??'')=='keluar'?'checked':'' ?>
-                         style="accent-color:var(--danger)">
-                  <i class="fas fa-arrow-up" style="color:var(--danger)"></i>
-                  Kas Keluar
-                </label>
-              </div>
-            </div>
-
-            <div style="display:flex;gap:10px">
-              <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center">
-                <i class="fas fa-save"></i> <?= $edit_data ? 'Simpan' : 'Tambah' ?>
-              </button>
-              <?php if (!$edit_data): ?>
-              <button type="reset" class="btn btn-ghost" onclick="resetForm()">
-                <i class="fas fa-undo"></i>
-              </button>
-              <?php endif; ?>
-            </div>
-          </form>
-        </div>
+    <!-- TAB NAVIGASI & TOMBOL TAMBAH KATEGORI TERSEJAJAR -->
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="kat-tab-btn active" id="tabBtnMasuk" onclick="switchTab('masuk')">
+          <i class="fas fa-arrow-down" style="color:var(--success)"></i> Pemasukan <span class="badge" style="background:rgba(255,255,255,0.3); padding:2px 8px; border-radius:99px; font-weight:700;"><?= $jml_masuk ?></span>
+        </button>
+        <button class="kat-tab-btn" id="tabBtnKeluar" onclick="switchTab('keluar')">
+          <i class="fas fa-arrow-up" style="color:var(--danger)"></i> Pengeluaran <span class="badge" style="background:rgba(0,0,0,0.08); padding:2px 8px; border-radius:99px; font-weight:700;"><?= $jml_keluar ?></span>
+        </button>
       </div>
 
-      <!-- ===== DAFTAR ===== -->
-      <div class="animate-fadeIn delay-2">
+      <!-- TOMBOL TAMBAH KATEGORI SEJAJAR DENGAN TAB -->
+      <button type="button" class="kat-tab-btn" onclick="openAddModal()" style="background:var(--primary); color:#fff; border-color:var(--primary); box-shadow:0 4px 12px rgba(30,110,181,0.25);">
+        <i class="fas fa-plus"></i> Tambah Kategori
+      </button>
+    </div>
 
-        <!-- Tab Switcher (untuk HP) -->
-        <div class="tab-switcher">
-          <button class="tab-btn active" id="tabMasukBtn" onclick="switchTab('masuk')">
-            <i class="fas fa-arrow-down" style="color:var(--info);margin-right:5px"></i>
-            Pemasukan <span id="badgeMasuk" style="background:rgba(59,130,246,.15);color:var(--info);padding:1px 7px;border-radius:99px;font-size:.7rem;margin-left:4px"><?= $total_masuk ?></span>
-          </button>
-          <button class="tab-btn" id="tabKeluarBtn" onclick="switchTab('keluar')">
-            <i class="fas fa-arrow-up" style="color:var(--danger);margin-right:5px"></i>
-            Pengeluaran <span id="badgeKeluar" style="background:rgba(239,68,68,.12);color:var(--danger);padding:1px 7px;border-radius:99px;font-size:.7rem;margin-left:4px"><?= $total_keluar ?></span>
-          </button>
+    <!-- KONTEN TAB KATEGORI PEMASUKAN -->
+    <div class="kat-content-box" id="boxMasuk">
+      <div class="card-modern" style="background:#fff; border-radius:14px; border:1px solid var(--border-color); box-shadow:var(--shadow-sm); overflow:hidden;">
+        <div style="padding:18px 24px; background:#f8fafc; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="font-size:1rem; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:8px; margin:0;">
+            <i class="fas fa-arrow-down" style="color:var(--success);"></i> Kategori Pemasukan
+          </h3>
+          <span class="badge badge-primary"><?= $jml_masuk ?> Kategori</span>
         </div>
-
-        <!-- List Masuk -->
-        <div class="kat-card" id="listMasuk">
-          <div class="kat-card-header">
-            <div class="kat-card-title">
-              <div class="kct-icon" style="background:var(--success)"><i class="fas fa-arrow-down"></i></div>
-              Kategori Pemasukan
-            </div>
-            <span class="badge badge-success"><?= $total_masuk ?></span>
-          </div>
-          <div>
-            <?php if ($list_masuk->num_rows): while ($k = $list_masuk->fetch_assoc()): ?>
-            <div class="kat-item">
-              <div class="kat-item-dot" style="background:var(--success)"></div>
-              <div class="kat-item-name"><?= htmlspecialchars($k['nama_kategori']) ?></div>
-              <span class="badge badge-info" style="margin-right:6px;font-size:.7rem"><?= $k['jml'] ?>x</span>
-              <div class="kat-item-actions">
-                <a href="?edit=<?= $k['id'] ?>" class="kat-btn kat-btn-edit" title="Edit">
-                  <i class="fas fa-pen"></i>
-                </a>
-                <?php if ($k['jml'] == 0): ?>
-                <button onclick="confirmDelete(<?= $k['id'] ?>,'<?= htmlspecialchars(addslashes($k['nama_kategori'])) ?>')"
-                        class="kat-btn kat-btn-del" title="Hapus">
-                  <i class="fas fa-trash"></i>
-                </button>
-                <?php else: ?>
-                <button class="kat-btn kat-btn-lock" title="Tidak bisa dihapus">
-                  <i class="fas fa-lock"></i>
-                </button>
-                <?php endif; ?>
-              </div>
-            </div>
-            <?php endwhile; else: ?>
-            <div class="empty-state" style="padding:32px">
-              <div class="es-icon"><i class="fas fa-tags"></i></div>
-              <h3>Belum ada kategori</h3>
-              <p>Tambahkan kategori pemasukan lewat form</p>
-            </div>
-            <?php endif; ?>
-          </div>
+        <div class="table-responsive">
+          <table class="table-custom" style="width:100%; border-collapse:collapse;">
+            <tbody>
+              <?php if ($kat_masuk->num_rows > 0): while($r = $kat_masuk->fetch_assoc()): ?>
+              <tr style="border-bottom:1px solid var(--border-color);">
+                <td style="padding:14px 24px; font-weight:600; color:var(--text-main); display:flex; align-items:center; gap:10px;">
+                  <span style="width:8px; height:8px; border-radius:50%; background:var(--primary);"></span>
+                  <?= htmlspecialchars($r['nama_kategori']) ?>
+                </td>
+                <td style="padding:14px 24px; text-align:right; width:150px;">
+                  <span class="badge-custom badge-blue"><?= $r['jml'] ?> transaksi</span>
+                </td>
+                <td style="padding:14px 24px; text-align:center; width:120px;">
+                  <div style="display:flex; justify-content:center; gap:6px;">
+                    <button onclick="openEditModal(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['nama_kategori'])) ?>', 'masuk')" class="btn-icon" title="Edit"><i class="fas fa-edit"></i></button>
+                    <?php if($r['jml'] == 0): ?>
+                      <button onclick="openHapusModal(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['nama_kategori'])) ?>')" class="btn-icon text-danger" title="Hapus"><i class="fas fa-trash"></i></button>
+                    <?php else: ?>
+                      <button class="btn-icon" style="opacity:0.4; cursor:not-allowed;" title="Sedang digunakan"><i class="fas fa-lock"></i></button>
+                    <?php endif; ?>
+                  </div>
+                </td>
+              </tr>
+              <?php endwhile; else: ?>
+              <tr><td colspan="3" style="text-align:center; padding:30px; color:var(--text-muted);">Belum ada kategori pemasukan</td></tr>
+              <?php endif; ?>
+            </tbody>
+          </table>
         </div>
+      </div>
+    </div>
 
-        <!-- List Keluar -->
-        <div class="kat-card" id="listKeluar" style="display:none;margin-top:0">
-          <div class="kat-card-header">
-            <div class="kat-card-title">
-              <div class="kct-icon" style="background:var(--danger)"><i class="fas fa-arrow-up"></i></div>
-              Kategori Pengeluaran
-            </div>
-            <span class="badge badge-danger"><?= $total_keluar ?></span>
-          </div>
-          <div>
-            <?php if ($list_keluar->num_rows): while ($k = $list_keluar->fetch_assoc()): ?>
-            <div class="kat-item">
-              <div class="kat-item-dot" style="background:var(--danger)"></div>
-              <div class="kat-item-name"><?= htmlspecialchars($k['nama_kategori']) ?></div>
-              <span class="badge badge-info" style="margin-right:6px;font-size:.7rem"><?= $k['jml'] ?>x</span>
-              <div class="kat-item-actions">
-                <a href="?edit=<?= $k['id'] ?>" class="kat-btn kat-btn-edit" title="Edit">
-                  <i class="fas fa-pen"></i>
-                </a>
-                <?php if ($k['jml'] == 0): ?>
-                <button onclick="confirmDelete(<?= $k['id'] ?>,'<?= htmlspecialchars(addslashes($k['nama_kategori'])) ?>')"
-                        class="kat-btn kat-btn-del" title="Hapus">
-                  <i class="fas fa-trash"></i>
-                </button>
-                <?php else: ?>
-                <button class="kat-btn kat-btn-lock" title="Tidak bisa dihapus">
-                  <i class="fas fa-lock"></i>
-                </button>
-                <?php endif; ?>
-              </div>
-            </div>
-            <?php endwhile; else: ?>
-            <div class="empty-state" style="padding:32px">
-              <div class="es-icon"><i class="fas fa-tags"></i></div>
-              <h3>Belum ada kategori</h3>
-              <p>Tambahkan kategori pengeluaran lewat form</p>
-            </div>
-            <?php endif; ?>
-          </div>
+    <!-- KONTEN TAB KATEGORI PENGELUARAN -->
+    <div class="kat-content-box" id="boxKeluar" style="display:none;">
+      <div class="card-modern" style="background:#fff; border-radius:14px; border:1px solid var(--border-color); box-shadow:var(--shadow-sm); overflow:hidden;">
+        <div style="padding:18px 24px; background:#f8fafc; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="font-size:1rem; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:8px; margin:0;">
+            <i class="fas fa-arrow-up" style="color:var(--danger);"></i> Kategori Pengeluaran
+          </h3>
+          <span class="badge badge-danger"><?= $jml_keluar ?> Kategori</span>
         </div>
+        <div class="table-responsive">
+          <table class="table-custom" style="width:100%; border-collapse:collapse;">
+            <tbody>
+              <?php if ($kat_keluar->num_rows > 0): while($r = $kat_keluar->fetch_assoc()): ?>
+              <tr style="border-bottom:1px solid var(--border-color);">
+                <td style="padding:14px 24px; font-weight:600; color:var(--text-main); display:flex; align-items:center; gap:10px;">
+                  <span style="width:8px; height:8px; border-radius:50%; background:var(--danger);"></span>
+                  <?= htmlspecialchars($r['nama_kategori']) ?>
+                </td>
+                <td style="padding:14px 24px; text-align:right; width:150px;">
+                  <span class="badge-custom badge-blue"><?= $r['jml'] ?> transaksi</span>
+                </td>
+                <td style="padding:14px 24px; text-align:center; width:120px;">
+                  <div style="display:flex; justify-content:center; gap:6px;">
+                    <button onclick="openEditModal(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['nama_kategori'])) ?>', 'keluar')" class="btn-icon" title="Edit"><i class="fas fa-edit"></i></button>
+                    <?php if($r['jml'] == 0): ?>
+                      <button onclick="openHapusModal(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['nama_kategori'])) ?>')" class="btn-icon text-danger" title="Hapus"><i class="fas fa-trash"></i></button>
+                    <?php else: ?>
+                      <button class="btn-icon" style="opacity:0.4; cursor:not-allowed;" title="Sedang digunakan"><i class="fas fa-lock"></i></button>
+                    <?php endif; ?>
+                  </div>
+                </td>
+              </tr>
+              <?php endwhile; else: ?>
+              <tr><td colspan="3" style="text-align:center; padding:30px; color:var(--text-muted);">Belum ada kategori pengeluaran</td></tr>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
-      </div><!-- /daftar -->
-    </div><!-- /layout -->
   </div>
 </div>
 </div>
 
-<!-- Modal Hapus -->
-<div class="modal-overlay" id="deleteModal">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title"><i class="fas fa-trash" style="color:var(--danger)"></i> Hapus Kategori</div>
-      <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
-    </div>
-    <div class="modal-body">
-      <div style="text-align:center;margin-bottom:16px">
-        <div style="width:56px;height:56px;background:rgba(239,68,68,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:var(--danger);margin:0 auto 12px">
-          <i class="fas fa-trash"></i>
-        </div>
-        <p style="font-size:.9rem">Hapus kategori: <strong id="deleteItemName"></strong>?</p>
-        <p style="color:var(--danger);font-size:.8rem;margin-top:8px"><i class="fas fa-exclamation-triangle"></i> Tindakan ini tidak dapat dibatalkan.</p>
+<!-- ========================================================= -->
+<!-- MODAL POP-UP TAMBAH / EDIT KATEGORI -->
+<!-- ========================================================= -->
+<div class="modern-modal-overlay" id="katModal">
+  <div class="modern-modal-box">
+    <div class="modern-modal-header">
+      <div class="modern-modal-title" id="modalTitleText">
+        <i class="fas fa-tags"></i> Tambah Kategori
       </div>
+      <button class="modern-modal-close" onclick="closeKatModal()"><i class="fas fa-times"></i></button>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
-      <a id="deleteConfirmBtn" class="btn btn-danger"><i class="fas fa-trash"></i> Hapus</a>
+    
+    <div class="modern-modal-body">
+      <form method="POST" id="katForm">
+        <input type="hidden" name="action" id="formAction" value="add">
+        <input type="hidden" name="id" id="formId" value="0">
+
+        <div class="form-group mb-3" style="margin-bottom:16px;">
+          <label class="form-label">Nama Kategori <span style="color:var(--danger)">*</span></label>
+          <input type="text" name="nama_kategori" id="inputNamaKategori" class="form-control" required autocomplete="off">
+        </div>
+
+        <div class="form-group mb-3" style="margin-bottom:20px;">
+          <label class="form-label">Jenis Kategori <span style="color:var(--danger)">*</span></label>
+          <select name="jenis" id="inputJenisKategori" class="form-control form-select">
+            <option value="masuk">Kas Masuk</option>
+            <option value="keluar">Kas Keluar</option>
+          </select>
+        </div>
+
+        <div class="modern-modal-footer">
+          <button type="button" class="btn-modal-batal" onclick="closeKatModal()">Batal</button>
+          <button type="submit" class="btn-modal-simpan" id="btnSubmitText">
+            <i class="fas fa-save"></i> Simpan Kategori
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================= -->
+<!-- MODAL POP-UP KONFIRMASI HAPUS KATEGORI -->
+<!-- ========================================================= -->
+<div class="modern-modal-overlay" id="hapusModal">
+  <div class="modern-modal-box">
+    <div class="modern-modal-header">
+      <div class="modern-modal-title" style="color:var(--danger);">
+        <i class="fas fa-exclamation-triangle"></i> Konfirmasi Hapus
+      </div>
+      <button class="modern-modal-close" onclick="closeHapusModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modern-modal-body">
+      <p style="font-size:0.9rem; color:#475569; margin-bottom:12px;">Apakah Anda yakin ingin menghapus kategori berikut?</p>
+      <div style="background:#fef2f2; border:1px solid #fecaca; padding:14px; border-radius:10px; font-weight:600; color:#991b1b; margin-bottom:12px;" id="namaKategoriHapus"></div>
+
+      <div class="modern-modal-footer">
+        <button type="button" class="btn-modal-batal" onclick="closeHapusModal()">Batal</button>
+        <a id="btnConfirmHapus" href="#" class="btn-modal-hapus">
+          <i class="fas fa-trash"></i> Ya, Hapus
+        </a>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-// Tab switcher
-function switchTab(tab) {
-  const isMasuk = tab === 'masuk';
-  document.getElementById('listMasuk').style.display  = isMasuk ? 'block' : 'none';
-  document.getElementById('listKeluar').style.display = isMasuk ? 'none'  : 'block';
-  document.getElementById('tabMasukBtn').classList.toggle('active',  isMasuk);
-  document.getElementById('tabKeluarBtn').classList.toggle('active', !isMasuk);
+// Logic Dropdown User Topbar
+const userDropdownWrap = document.getElementById('userDropdownWrap');
+const userDropdownTrigger = document.getElementById('userDropdownTrigger');
+if (userDropdownTrigger && userDropdownWrap) {
+    userDropdownTrigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        userDropdownWrap.classList.toggle('active');
+    });
+    document.addEventListener('click', function(e) {
+        if (!userDropdownWrap.contains(e.target)) {
+            userDropdownWrap.classList.remove('active');
+        }
+    });
 }
 
-// Jika edit data dari jenis keluar, otomatis buka tab keluar
-<?php if ($edit_data && $edit_data['jenis'] === 'keluar'): ?>
-switchTab('keluar');
-<?php endif; ?>
+// Logic Tab Switcher
+function switchTab(jenis) {
+    const btnMasuk = document.getElementById('tabBtnMasuk');
+    const btnKeluar = document.getElementById('tabBtnKeluar');
+    const boxMasuk = document.getElementById('boxMasuk');
+    const boxKeluar = document.getElementById('boxKeluar');
 
-// Radio highlight
-function updateRadio() {
-  const val = document.querySelector('input[name="jenis"]:checked')?.value;
-  document.getElementById('lblMasuk').className  = 'jenis-label' + (val==='masuk'  ? ' selected-masuk'  : '');
-  document.getElementById('lblKeluar').className = 'jenis-label' + (val==='keluar' ? ' selected-keluar' : '');
+    if (jenis === 'masuk') {
+        btnMasuk.classList.add('active');
+        btnKeluar.classList.remove('active');
+        boxMasuk.style.display = 'block';
+        boxKeluar.style.display = 'none';
+    } else {
+        btnKeluar.classList.add('active');
+        btnMasuk.classList.remove('active');
+        boxKeluar.style.display = 'block';
+        boxMasuk.style.display = 'none';
+    }
 }
-document.querySelectorAll('input[name="jenis"]').forEach(r => r.addEventListener('change', updateRadio));
-updateRadio();
 
-// Reset form
-function resetForm() {
-  document.getElementById('inputNama').value = '';
-  document.querySelectorAll('input[name="jenis"]').forEach(r => { r.checked = r.value === 'masuk'; });
-  updateRadio();
+// Logic Pop-up Modal Kategori
+function openAddModal() {
+  document.getElementById('modalTitleText').innerHTML = '<i class="fas fa-tags"></i> Tambah Kategori Baru';
+  document.getElementById('formAction').value = 'add';
+  document.getElementById('formId').value = '0';
+  document.getElementById('inputNamaKategori').value = '';
+  document.getElementById('btnSubmitText').innerHTML = '<i class="fas fa-plus"></i> Tambah Kategori';
+  document.getElementById('katModal').classList.add('active');
 }
 
-// Delete modal
-function confirmDelete(id, name) {
-  document.getElementById('deleteItemName').textContent = name;
-  document.getElementById('deleteConfirmBtn').href = '?delete=' + id;
-  document.getElementById('deleteModal').classList.add('active');
+function openEditModal(id, nama, jenis) {
+  document.getElementById('modalTitleText').innerHTML = '<i class="fas fa-edit"></i> Edit Kategori';
+  document.getElementById('formAction').value = 'edit';
+  document.getElementById('formId').value = id;
+  document.getElementById('inputNamaKategori').value = nama;
+  document.getElementById('inputJenisKategori').value = jenis;
+  document.getElementById('btnSubmitText').innerHTML = '<i class="fas fa-save"></i> Perbarui Kategori';
+  document.getElementById('katModal').classList.add('active');
 }
-function closeModal() { document.getElementById('deleteModal').classList.remove('active'); }
-document.getElementById('deleteModal').addEventListener('click', e => { if(e.target===document.getElementById('deleteModal')) closeModal(); });
-document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
 
-// Sidebar
-const sidebar=document.getElementById('adminSidebar');
-const overlay=document.getElementById('sidebarOverlay');
-document.getElementById('sidebarToggle').addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('active');});
-overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('active');});
+function closeKatModal() {
+  document.getElementById('katModal').classList.remove('active');
+}
+
+// Logic Pop-up Modal Hapus
+function openHapusModal(id, nama) {
+  document.getElementById('namaKategoriHapus').textContent = nama;
+  document.getElementById('btnConfirmHapus').href = '?hapus=' + id;
+  document.getElementById('hapusModal').classList.add('active');
+}
+
+function closeHapusModal() {
+  document.getElementById('hapusModal').classList.remove('active');
+}
+
+document.getElementById('katModal').addEventListener('click', function(e) {
+  if (e.target === this) closeKatModal();
+});
+document.getElementById('hapusModal').addEventListener('click', function(e) {
+  if (e.target === this) closeHapusModal();
+});
+
+// Sidebar toggle
+const sidebar = document.getElementById('adminSidebar') || document.querySelector('.sidebar');
+const overlay = document.getElementById('sidebarOverlay');
+const sidebarToggle = document.getElementById('sidebarToggle');
+
+if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        if(sidebar) sidebar.classList.toggle('open');
+        if(overlay) overlay.classList.toggle('active');
+      } else {
+        document.querySelector('.admin-wrapper').classList.toggle('toggled');
+      }
+    });
+}
+if (overlay) {
+    overlay.addEventListener('click',()=>{
+      if(sidebar) sidebar.classList.remove('open');
+      overlay.classList.remove('active');
+    });
+}
 </script>
 </body>
 </html>

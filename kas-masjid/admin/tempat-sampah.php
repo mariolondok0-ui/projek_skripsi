@@ -2,6 +2,29 @@
 require_once '../includes/config.php';
 requireLogin();
 
+// Fungsi Helper Format Tanggal Indonesia
+function formatTanggalIndo($tanggal, $dengan_waktu = false) {
+    if (empty($tanggal) || $tanggal == '0000-00-00' || $tanggal == '0000-00-00 00:00:00') {
+        return '-';
+    }
+    
+    $bulan = [
+        1 => 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+    ];
+    
+    $timestamp = strtotime($tanggal);
+    $tgl   = date('d', $timestamp);
+    $bln   = $bulan[(int)date('m', $timestamp)];
+    $thn   = date('Y', $timestamp);
+    $waktu = date('H:i', $timestamp);
+    
+    if ($dengan_waktu) {
+        return "$tgl $bln $thn $waktu";
+    }
+    return "$tgl $bln $thn";
+}
+
 // ---- Pulihkan 1 data ----
 if (isset($_GET['pulihkan'])) {
     $id = (int)$_GET['pulihkan'];
@@ -37,18 +60,15 @@ $filter_jenis = sanitize($_GET['jenis'] ?? 'semua');
 $page         = max(1, (int)($_GET['page'] ?? 1));
 $per_page     = 12;
 
-// PERBAIKAN ERROR AMBIGUOUS: Tambahkan inisial "t." di depan nama kolom
 $where = "t.deleted_at IS NOT NULL";
 if ($filter_jenis !== 'semua') {
     $where .= " AND t.jenis='" . sanitize($filter_jenis) . "'";
 }
 
-// PERBAIKAN: Tambahkan alias "t" pada tabel transaksi di query COUNT
 $total_rows  = $conn->query("SELECT COUNT(*) as c FROM transaksi t WHERE $where")->fetch_assoc()['c'];
 $total_pages = max(1, ceil($total_rows / $per_page));
 $offset      = ($page - 1) * $per_page;
 
-// PERBAIKAN: WHERE dipanggil langsung karena inisial "t." sudah ada di variabel string $where
 $rows = $conn->query("
     SELECT t.*, k.nama_kategori
     FROM transaksi t
@@ -71,12 +91,81 @@ $alert = getAlert();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Tempat Sampah – <?= APP_NAME ?></title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=1786264272">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=<?= time() ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<!-- FONT MODERN: Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* =========================================================
-   TAMBAHAN CSS RESPONSIVE AGRESIF UNTUK HP (TEMPAT SAMPAH)
-   ========================================================= */
+/* =======================================================
+   STYLING MODAL POP-UP RESTORE & DELETE MODERN
+   ======================================================= */
+.modern-modal-overlay {
+  position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px); z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; opacity: 0; visibility: hidden; transition: all 0.3s ease;
+}
+.modern-modal-overlay.active { opacity: 1; visibility: visible; }
+.modern-modal-box {
+  background: #ffffff; border-radius: 16px; width: 100%; max-width: 500px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: scale(0.95) translateY(10px); transition: all 0.3s ease;
+  overflow: hidden; border: none; font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+.modern-modal-overlay.active .modern-modal-box { transform: scale(1) translateY(0); }
+
+/* Header Modal */
+.modern-modal-header {
+  padding: 20px 24px; background: #ffffff; 
+  border-bottom: 1px solid #e2e8f0; 
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modern-modal-title { 
+  font-size: 1.1rem; font-weight: 700; 
+  display: flex; align-items: center; gap: 10px;
+  letter-spacing: -0.2px;
+}
+
+/* Tombol silang */
+.modern-modal-close {
+  width: 32px; height: 32px; background: transparent; border: none;
+  display: flex; align-items: center; justify-content: center; 
+  color: #94a3b8; font-size: 1.25rem; cursor: pointer; transition: 0.2s;
+}
+.modern-modal-close:hover { color: #0f172a; }
+
+/* Body Modal */
+.modern-modal-body { padding: 24px; background: #ffffff; }
+
+/* Footer Modal */
+.modern-modal-footer {
+    display: flex; justify-content: flex-end; align-items: center; gap: 12px;
+    margin-top: 20px; padding-top: 16px; border-top: 1px solid #f1f5f9;
+}
+
+.btn-modal-batal {
+    background: #f1f5f9; color: #475569; font-weight: 600; font-size: 0.875rem;
+    border: none; padding: 11px 24px; border-radius: 8px; cursor: pointer; transition: 0.2s;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+.btn-modal-batal:hover { background: #e2e8f0; color: #0f172a; }
+
+.btn-modal-pulihkan {
+    background: var(--primary); color: #ffffff; font-weight: 600; font-size: 0.875rem;
+    border: none; padding: 11px 24px; border-radius: 8px; cursor: pointer; transition: 0.2s;
+    display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(30,110,181,0.3);
+    text-decoration: none; font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+.btn-modal-pulihkan:hover { background: var(--primary-dark); transform: translateY(-1px); color: #ffffff; }
+
+.btn-modal-hapus {
+    background: var(--danger); color: #ffffff; font-weight: 600; font-size: 0.875rem;
+    border: none; padding: 11px 24px; border-radius: 8px; cursor: pointer; transition: 0.2s;
+    display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);
+    text-decoration: none; font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+.btn-modal-hapus:hover { background: #dc2626; transform: translateY(-1px); color: #ffffff; }
+
 .table-wrapper {
     display: block !important;
     width: 100% !important;
@@ -85,9 +174,8 @@ $alert = getAlert();
     border-radius: 12px;
 }
 
-/* PERBAIKAN TOTAL UNTUK KOTAK SELECT (DROPDOWN) AGAR ELEGAN */
 select.form-select {
-    font-family: 'Segoe UI', 'Poppins', Tahoma, Geneva, Verdana, sans-serif !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
     font-size: 0.95rem !important;
     font-weight: 500 !important;
     color: #1f2937 !important;
@@ -95,10 +183,9 @@ select.form-select {
     border: 1px solid #d1d5db !important;
     border-radius: 8px !important;
     background-color: #f9fafb !important;
-    appearance: none !important; /* Menghilangkan panah jelek bawaan browser */
+    appearance: none !important;
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
-    /* Membuat panah custom yang rapi */
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
     background-repeat: no-repeat !important;
     background-position: right 14px center !important;
@@ -107,112 +194,20 @@ select.form-select {
     box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
     transition: all 0.2s ease;
 }
-select.form-select:focus {
-    border-color: #1e6eb5 !important;
-    outline: none !important;
-    box-shadow: 0 0 0 3px rgba(30,110,181,0.15) !important;
-    background-color: #ffffff !important;
-}
-select.form-select option {
-    font-family: 'Segoe UI', 'Poppins', sans-serif !important;
-    font-weight: 500 !important;
-    color: #333 !important;
-    padding: 10px !important;
-}
 
 @media (max-width: 768px) {
     html, body { overflow-x: hidden !important; max-width: 100vw !important; }
-    
     .admin-wrapper { display: block !important; width: 100% !important; overflow-x: hidden !important; }
     .admin-main { width: 100% !important; margin-left: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
-    
     .admin-content { width: 100% !important; padding: 12px !important; box-sizing: border-box !important; margin: 0 !important; }
     .topbar { width: 100% !important; box-sizing: border-box !important; padding: 12px 15px !important; }
     .t-name { display: none !important; }
 
-    /* Merapikan Header & Tombol */
-    .page-header > div { 
-        flex-direction: column !important; 
-        align-items: flex-start !important; 
-        gap: 15px !important; 
-        text-align: left !important; 
-    }
-    
-    .page-header a.btn { 
-        width: 100% !important;
-        justify-content: center !important; 
-        align-items: center !important;
-        display: inline-flex !important;
-        padding: 12px !important;
-        background: var(--bg-card) !important;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.04) !important; 
-        border-radius: 8px !important;
-    }
-    
-    .page-title { font-size: 1.35rem !important; margin-bottom: 4px !important; }
-    .page-subtitle { font-size: 0.85rem !important; margin-bottom: 5px !important; line-height: 1.5 !important; }
-
-    /* 3 Kotak Stat Atas (Total Lebar Penuh, Sisanya Berbagi 50:50) */
-    .grid-3 { 
-        display: grid !important; 
-        grid-template-columns: repeat(2, 1fr) !important; 
-        gap: 12px !important; 
-        width: 100% !important; 
-    }
+    .grid-3 { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; width: 100% !important; }
     .grid-3 > div:first-child { grid-column: span 2 !important; }
     .stat-card { padding: 15px 12px !important; border-radius: 12px !important; width: auto !important; margin: 0 !important; }
-    .stat-label { font-size: 0.72rem !important; }
-    .stat-value { font-size: 1.05rem !important; margin: 4px 0 !important; }
-    .stat-sub { font-size: 0.7rem !important; }
-
-    /* Merapikan Info Banner Peringatan */
-    .info-banner {
-        flex-direction: column !important;
-        text-align: left !important; 
-        gap: 15px !important;
-        padding: 15px !important;
-    }
-    .info-banner > div:first-child {
-        flex-direction: row !important; 
-        justify-content: flex-start !important;
-        text-align: left !important;
-    }
-    .info-banner > div:last-child {
-        width: 100% !important;
-        flex-direction: column !important; 
-        gap: 10px !important;
-    }
-    .info-banner .btn {
-        width: 100% !important;
-        justify-content: center !important;
-    }
-
-    /* Merapikan Filter Bar (Dropdown) */
-    .filter-bar { 
-        flex-direction: column !important; 
-        padding: 15px !important; 
-        border-radius: 12px !important; 
-        gap: 12px !important; 
-        text-align: left !important; 
-        align-items: stretch !important;
-    }
-    .filter-bar form { 
-        flex-direction: column !important; 
-        gap: 10px !important; 
-        width: 100% !important; 
-        align-items: stretch !important;
-    }
-    .filter-bar .form-control { 
-        width: 100% !important; 
-        max-width: none !important;
-        box-sizing: border-box !important; 
-    }
-    
-    /* Tabel (Dipaksa lebar supaya bisa digeser ke samping) */
     .table-wrapper table { min-width: 800px !important; }
-    .table th, .table td { padding: 10px 8px !important; font-size: 0.85rem !important; }
 }
-/* ========================================================= */
 </style>
 </head>
 <body>
@@ -231,7 +226,35 @@ select.form-select option {
       </div>
     </div>
     <div class="topbar-right">
-      <div class="topbar-date"><i class="fas fa-calendar-alt"></i> <?= date('d F Y') ?></div>
+      <div class="topbar-date"><i class="fas fa-calendar-alt me-1" style="margin-right: 4px;"></i> <?= formatTanggalIndo(date('Y-m-d')) ?></div>
+      
+      <!-- DROPDOWN PROFIL USER -->
+      <div class="user-dropdown-wrapper" id="userDropdownWrap">
+        <div class="topbar-user" id="userDropdownTrigger">
+          <div class="t-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
+          <div class="t-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+        
+        <div class="user-dropdown-menu">
+          <div class="dropdown-header">
+            <div class="d-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
+            <div class="d-info">
+              <div class="d-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
+              <div class="d-role">@admin</div>
+            </div>
+          </div>
+          <div class="dropdown-body">
+            <a href="profil.php" class="dropdown-item">
+              <i class="fas fa-user-cog"></i> Pengaturan Akun
+            </a>
+            <a href="#" class="dropdown-item text-danger" onclick="openLogoutModal()">
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+          </div>
+        </div>
+      </div>
+      <!-- END DROPDOWN -->
     </div>
   </div>
 
@@ -245,8 +268,6 @@ select.form-select option {
 
     <!-- PAGE HEADER -->
     <div style="margin-bottom:24px; padding-bottom:16px; border-bottom:1px dashed var(--border-light);">
-      
-      <!-- Baris Atas: Judul & Tombol -->
       <div style="display:flex; align-items:center; justify-content:space-between; gap:15px; margin-bottom:8px;">
         <div style="display:flex; align-items:center; gap:10px;">
           <div style="width:36px; height:36px; background:rgba(239,68,68,0.1); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--danger); font-size:1.1rem; flex-shrink:0;">
@@ -258,12 +279,9 @@ select.form-select option {
           <i class="fas fa-arrow-left"></i> Kembali
         </a>
       </div>
-
-      <!-- Baris Bawah: Deskripsi -->
       <p style="font-size:0.82rem; color:var(--text-muted); margin:0; line-height:1.5;">
         Data yang dihapus tersimpan di sini bisa dipulihkan atau dihapus permanen
       </p>
-      
     </div>
 
     <!-- STAT CARDS -->
@@ -297,22 +315,18 @@ select.form-select option {
           <div style="font-weight:700;font-size:.9rem;color:var(--text-primary)">
             Ada <?= $jml_total ?> data di tempat sampah
           </div>
-          <div style="font-size:.78rem;color:var(--text-muted)">
+          <div style="font-size:.7rem;color:var(--text-muted)">
             Data akan tetap tersimpan sampai Anda menghapus secara permanen
           </div>
         </div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <a href="?pulihkan_semua=1"
-           onclick="return confirm('Pulihkan semua <?= $jml_total ?> data?')"
-           class="btn btn-success btn-sm">
+        <button onclick="confirmPulihkanSemua()" class="btn btn-success btn-sm">
           <i class="fas fa-undo"></i> Pulihkan Semua
-        </a>
-        <a href="?kosongkan=1"
-           onclick="return confirm('HAPUS PERMANEN semua <?= $jml_total ?> data? Tindakan ini tidak bisa dibatalkan!')"
-           class="btn btn-danger btn-sm">
+        </button>
+        <button onclick="confirmKosongkan()" class="btn btn-danger btn-sm">
           <i class="fas fa-fire"></i> Kosongkan Sampah
-        </a>
+        </button>
       </div>
     </div>
     <?php endif; ?>
@@ -353,7 +367,8 @@ select.form-select option {
             while ($r = $rows->fetch_assoc()): ?>
           <tr style="opacity:.85">
             <td class="text-muted"><?= $no++ ?></td>
-            <td style="white-space:nowrap;"><?= date('d M Y', strtotime($r['tanggal'])) ?></td>
+            <!-- Menggunakan Format Tanggal Indonesia -->
+            <td style="white-space:nowrap;"><?= formatTanggalIndo($r['tanggal']) ?></td>
             <td>
               <span style="text-decoration:line-through;color:var(--text-muted)">
                 <?= htmlspecialchars($r['keterangan']) ?>
@@ -369,22 +384,24 @@ select.form-select option {
                 style="text-decoration:line-through;opacity:.7;white-space:nowrap;">
               <?= ($r['jenis']=='masuk'?'+':'-') . formatRupiah($r['jumlah']) ?>
             </td>
+            <!-- Menggunakan Format Tanggal Indonesia dengan Waktu -->
             <td style="font-size:.78rem;color:var(--text-muted);white-space:nowrap;">
               <i class="fas fa-clock"></i>
-              <?= date('d M Y H:i', strtotime($r['deleted_at'])) ?>
+              <?= formatTanggalIndo($r['deleted_at'], true) ?>
             </td>
             <td>
               <div style="display:flex;gap:6px;justify-content:center">
-                <!-- Tombol Pulihkan -->
-                <a href="?pulihkan=<?= $r['id'] ?>"
-                   class="btn btn-success btn-sm"
-                   data-tooltip="Pulihkan"
-                   onclick="return confirm('Pulihkan data ini?')">
+                <!-- Tombol Pulihkan Membuka Pop-up -->
+                <button onclick="confirmPulihkan(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['keterangan'])) ?>')"
+                        class="btn btn-primary btn-sm"
+                        style="padding:6px 12px; border-radius:8px;"
+                        data-tooltip="Pulihkan">
                   <i class="fas fa-undo"></i>
-                </a>
-                <!-- Tombol Hapus Permanen -->
+                </button>
+                <!-- Tombol Hapus Permanen Membuka Pop-up -->
                 <button onclick="confirmHapusPermanent(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['keterangan'])) ?>')"
                         class="btn btn-danger btn-sm"
+                        style="padding:6px 12px; border-radius:8px;"
                         data-tooltip="Hapus Permanen">
                   <i class="fas fa-trash"></i>
                 </button>
@@ -424,87 +441,138 @@ select.form-select option {
     </div>
     <?php endif; ?>
 
-    <!-- INFO BOX -->
-    <div style="margin-top:24px;background:var(--bg-main);border-radius:var(--radius-lg);padding:20px 24px;border:1px solid var(--border-light)">
-      <h4 style="font-size:.875rem;font-weight:700;color:var(--text-primary);margin-bottom:12px">
-        <i class="fas fa-info-circle" style="color:var(--info)"></i> Informasi Tempat Sampah
-      </h4>
-      <ul style="display:flex;flex-direction:column;gap:8px">
-        <?php $infos=[
-          ['fas fa-undo','success','Pulihkan','Kembalikan data ke kas masuk/keluar seperti semula'],
-          ['fas fa-trash','danger','Hapus Permanen','Data dihapus selamanya dan tidak bisa dikembalikan'],
-          ['fas fa-fire','warning','Kosongkan Sampah','Hapus semua data di tempat sampah sekaligus'],
-          ['fas fa-check-circle','success','Data Aman','Data yang di-trash tidak mempengaruhi laporan dan saldo'],
-        ]; foreach($infos as [$ico,$col,$judul,$desc]): ?>
-        <li style="display:flex;align-items:flex-start;gap:10px;font-size:.82rem;color:var(--text-secondary)">
-          <i class="<?= $ico ?>" style="color:var(--<?= $col ?>);margin-top:2px;flex-shrink:0;width:16px;text-align:center"></i>
-          <div><strong><?= $judul ?>:</strong> <?= $desc ?></div>
-        </li>
-        <?php endforeach; ?>
-      </ul>
-    </div>
+  </div>
+</div>
+</div>
 
-  </div><!-- /admin-content -->
-</div><!-- /admin-main -->
-</div><!-- /admin-wrapper -->
+<!-- ========================================================= -->
+<!-- MODAL POP-UP KONFIRMASI PULIHKAN DATA -->
+<!-- ========================================================= -->
+<div class="modern-modal-overlay" id="modalPulihkan">
+  <div class="modern-modal-box">
+    <div class="modern-modal-header">
+      <div class="modern-modal-title" style="color:var(--primary);">
+        <i class="fas fa-undo"></i> Pulihkan Data
+      </div>
+      <button class="modern-modal-close" onclick="closeModal('modalPulihkan')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modern-modal-body">
+      <p style="font-size:0.9rem; color:#475569; margin-bottom:12px;">Apakah Anda yakin ingin memulihkan data transaksi berikut ke daftar transaksi aktif?</p>
+      <div style="background:#f8fafc; border:1px solid #cbd5e1; padding:14px; border-radius:10px; font-weight:600; color:#0f172a; margin-bottom:12px;" id="namaDataPulihkan"></div>
+      
+      <div class="modern-modal-footer">
+        <button type="button" class="btn-modal-batal" onclick="closeModal('modalPulihkan')">Batal</button>
+        <a id="btnConfirmPulihkan" href="#" class="btn-modal-pulihkan">
+          <i class="fas fa-undo"></i> Ya, Pulihkan
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
 
-<!-- Modal Konfirmasi Hapus Permanen -->
-<div class="modal-overlay" id="modalHapus">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">
-        <i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i>
-        Hapus Permanen
+<!-- ========================================================= -->
+<!-- MODAL POP-UP KONFIRMASI HAPUS PERMANEN DATA -->
+<!-- ========================================================= -->
+<div class="modern-modal-overlay" id="modalHapus">
+  <div class="modern-modal-box">
+    <div class="modern-modal-header">
+      <div class="modern-modal-title" style="color:var(--danger);">
+        <i class="fas fa-exclamation-triangle"></i> Hapus Permanen
       </div>
-      <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+      <button class="modern-modal-close" onclick="closeModal('modalHapus')"><i class="fas fa-times"></i></button>
     </div>
-    <div class="modal-body">
-      <div style="text-align:center;margin-bottom:16px">
-        <div style="width:64px;height:64px;background:rgba(239,68,68,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:var(--danger);margin:0 auto 14px">
-          <i class="fas fa-trash"></i>
-        </div>
-        <h3 style="font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:8px">
-          Yakin ingin menghapus permanen?
-        </h3>
-        <p style="font-size:.875rem;color:var(--text-muted)">Data berikut akan dihapus selamanya:</p>
+    <div class="modern-modal-body">
+      <p style="font-size:0.9rem; color:#475569; margin-bottom:12px;">Apakah Anda yakin ingin menghapus data transaksi berikut secara permanen?</p>
+      <div style="background:#fef2f2; border:1px solid #fecaca; padding:14px; border-radius:10px; font-weight:600; color:#991b1b; margin-bottom:12px;" id="namaDataHapus"></div>
+      <p style="font-size:0.8rem; color:#dc2626; font-weight:600;"><i class="fas fa-warning me-1"></i> Peringatan: Tindakan ini tidak dapat dibatalkan!</p>
+
+      <div class="modern-modal-footer">
+        <button type="button" class="btn-modal-batal" onclick="closeModal('modalHapus')">Batal</button>
+        <a id="btnHapusPermanent" href="#" class="btn-modal-hapus">
+          <i class="fas fa-trash"></i> Hapus Permanen
+        </a>
       </div>
-      <div style="background:var(--bg-main);padding:14px;border-radius:var(--radius-sm);text-align:center;font-weight:600;color:var(--text-primary);margin-bottom:12px" id="namaDataHapus"></div>
-      <div class="alert alert-danger" style="margin-bottom:0">
-        <i class="fas fa-warning"></i>
-        <strong>Peringatan:</strong> Tindakan ini tidak dapat dibatalkan!
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal()">
-        <i class="fas fa-times"></i> Batal
-      </button>
-      <a id="btnHapusPermanent" class="btn btn-danger">
-        <i class="fas fa-trash"></i> Ya, Hapus Permanen
-      </a>
     </div>
   </div>
 </div>
 
 <script>
+// Logic Dropdown User Topbar
+const userDropdownWrap = document.getElementById('userDropdownWrap');
+const userDropdownTrigger = document.getElementById('userDropdownTrigger');
+
+if (userDropdownTrigger && userDropdownWrap) {
+    userDropdownTrigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        userDropdownWrap.classList.toggle('active');
+    });
+    
+    document.addEventListener('click', function(e) {
+        if (!userDropdownWrap.contains(e.target)) {
+            userDropdownWrap.classList.remove('active');
+        }
+    });
+}
+
+// Logic Pop-up Modal Pulihkan Single
+function confirmPulihkan(id, nama) {
+  document.getElementById('namaDataPulihkan').textContent = nama;
+  document.getElementById('btnConfirmPulihkan').href = '?pulihkan=' + id;
+  document.getElementById('modalPulihkan').classList.add('active');
+}
+
+// Logic Pop-up Modal Hapus Permanen Single
 function confirmHapusPermanent(id, nama) {
-  document.getElementById('namaDataHapus').textContent  = nama;
+  document.getElementById('namaDataHapus').textContent = nama;
   document.getElementById('btnHapusPermanent').href = '?hapus=' + id + '&jenis=<?= $filter_jenis ?>&page=<?= $page ?>';
   document.getElementById('modalHapus').classList.add('active');
 }
-function closeModal() {
-  document.getElementById('modalHapus').classList.remove('active');
+
+// Logic Pulihkan Semua
+function confirmPulihkanSemua() {
+  document.getElementById('namaDataPulihkan').textContent = "SEMUA data transaksi di tempat sampah";
+  document.getElementById('btnConfirmPulihkan').href = '?pulihkan_semua=1';
+  document.getElementById('modalPulihkan').classList.add('active');
 }
-document.getElementById('modalHapus').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
+
+// Logic Kosongkan Sampah
+function confirmKosongkan() {
+  document.getElementById('namaDataHapus').textContent = "SEMUA data transaksi di tempat sampah";
+  document.getElementById('btnHapusPermanent').href = '?kosongkan=1';
+  document.getElementById('modalHapus').classList.add('active');
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).classList.remove('active');
+}
+
+// Close modal when clicking outside
+['modalPulihkan', 'modalHapus'].forEach(id => {
+  const el = document.getElementById(id);
+  if(el) {
+    el.addEventListener('click', function(e) {
+      if (e.target === this) closeModal(id);
+    });
+  }
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+document.addEventListener('keydown', e => { 
+  if (e.key === 'Escape') {
+    closeModal('modalPulihkan');
+    closeModal('modalHapus');
+  } 
+});
 
 // Sidebar toggle
 const sidebar = document.getElementById('adminSidebar');
 const overlay = document.getElementById('sidebarOverlay');
 document.getElementById('sidebarToggle').addEventListener('click', () => {
-  sidebar.classList.toggle('open');
-  overlay.classList.toggle('active');
+  if (window.innerWidth <= 768) {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('active');
+  } else {
+    document.querySelector('.admin-wrapper').classList.toggle('toggled');
+  }
 });
 overlay.addEventListener('click', () => {
   sidebar.classList.remove('open');

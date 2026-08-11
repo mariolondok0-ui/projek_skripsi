@@ -2,6 +2,15 @@
 require_once '../includes/config.php';
 requireLogin();
 
+function tgl_indo($tanggal){
+    $bulan = array (
+        1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    );
+    $pecahkan = explode('-', date('Y-m-d', strtotime($tanggal)));
+    return $pecahkan[2] . ' ' . $bulan[ (int)$pecahkan[1] ] . ' ' . $pecahkan[0];
+}
+
 // Stat cards
 $total_masuk  = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='masuk' AND deleted_at IS NULL")->fetch_assoc()['t'];
 $total_keluar = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='keluar' AND deleted_at IS NULL")->fetch_assoc()['t'];
@@ -15,37 +24,35 @@ $trx_bln      = (int)$conn->query("SELECT COUNT(*) as t FROM transaksi WHERE del
 
 // Bar chart 6 bulan
 $chart_labels = $chart_masuk = $chart_keluar = [];
+$nama_bulan_singkat = [1=>'Jan', 2=>'Feb', 3=>'Mar', 4=>'Apr', 5=>'Mei', 6=>'Jun', 7=>'Jul', 8=>'Agt', 9=>'Sep', 10=>'Okt', 11=>'Nov', 12=>'Des'];
+
 for ($i = 5; $i >= 0; $i--) {
     $b = date('Y-m', strtotime("-$i month"));
-    $chart_labels[] = date('M Y', strtotime("-$i month"));
+    $bulan_angka = (int)date('m', strtotime("-$i month"));
+    $chart_labels[] = $nama_bulan_singkat[$bulan_angka] . ' ' . date('Y', strtotime("-$i month"));
+    
     $chart_masuk[]  = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='masuk' AND deleted_at IS NULL AND DATE_FORMAT(tanggal,'%Y-%m')='$b'")->fetch_assoc()['t'];
     $chart_keluar[] = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='keluar' AND deleted_at IS NULL AND DATE_FORMAT(tanggal,'%Y-%m')='$b'")->fetch_assoc()['t'];
 }
 
-// Line chart saldo kumulatif 12 bulan
-$line_labels = $line_saldo = [];
-$kum = 0;
+// Line chart 12 bulan (Trend Pemasukan & Pengeluaran)
+$line_labels = $line_masuk = $line_keluar = [];
 for ($m = 1; $m <= 12; $m++) {
     $b  = sprintf('%04d-%02d', $tahun, $m);
     $mk = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='masuk' AND deleted_at IS NULL AND DATE_FORMAT(tanggal,'%Y-%m')='$b'")->fetch_assoc()['t'];
     $kl = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='keluar' AND deleted_at IS NULL AND DATE_FORMAT(tanggal,'%Y-%m')='$b'")->fetch_assoc()['t'];
-    $kum += ($mk - $kl);
-    $line_labels[] = date('M', mktime(0,0,0,$m,1));
-    $line_saldo[]  = $kum;
+    
+    $line_labels[] = $nama_bulan_singkat[$m];
+    $line_masuk[]  = $mk;
+    $line_keluar[] = $kl;
 }
 
-// Pie pemasukan bulan ini
-$pi_q = $conn->query("SELECT k.nama_kategori, COALESCE(SUM(t.jumlah),0) as total FROM transaksi t JOIN kategori k ON t.kategori_id=k.id WHERE t.jenis='masuk' AND t.deleted_at IS NULL AND YEAR(t.tanggal)=$tahun GROUP BY k.id ORDER BY total DESC LIMIT 8");
-$pil = $pid = [];
-while ($r = $pi_q->fetch_assoc()) { $pil[] = $r['nama_kategori']; $pid[] = (float)$r['total']; }
-
-// Pie pengeluaran tahun ini
-$pe_q = $conn->query("SELECT k.nama_kategori, COALESCE(SUM(t.jumlah),0) as total FROM transaksi t JOIN kategori k ON t.kategori_id=k.id WHERE t.jenis='keluar' AND t.deleted_at IS NULL AND YEAR(t.tanggal)=$tahun GROUP BY k.id ORDER BY total DESC LIMIT 8");
-$pel = $ped = [];
-while ($r = $pe_q->fetch_assoc()) { $pel[] = $r['nama_kategori']; $ped[] = (float)$r['total']; }
+// Data Donat Gabungan (Pemasukan vs Pengeluaran)
+$pie_combined_labels = ['Total Pemasukan', 'Total Pengeluaran'];
+$pie_combined_data   = [$total_masuk, $total_keluar];
 
 // Transaksi terbaru
-$trx_recent = $conn->query("SELECT t.*, k.nama_kategori FROM transaksi t JOIN kategori k ON t.kategori_id=k.id WHERE t.deleted_at IS NULL ORDER BY t.tanggal DESC, t.id DESC LIMIT 7");
+$trx_recent = $conn->query("SELECT t.*, k.nama_kategori FROM transaksi t JOIN kategori k ON t.kategori_id=k.id WHERE t.deleted_at IS NULL ORDER BY t.tanggal DESC, t.id DESC LIMIT 6");
 
 $alert = getAlert();
 ?>
@@ -55,437 +62,576 @@ $alert = getAlert();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Dashboard – <?= APP_NAME ?></title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=1786264272">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=<?= time() ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<!-- FONT MODERN: INTER -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
 <style>
-.grafik-slide{display:none;animation:slideInChart .5s cubic-bezier(.4,0,.2,1);}
-.grafik-slide.active{display:block;}
-@keyframes slideInChart{from{opacity:0;transform:translateX(40px) scale(.97)}to{opacity:1;transform:translateX(0) scale(1)}}
-.slide-progress-wrap{height:3px;background:var(--border-light);border-radius:99px;overflow:hidden;margin-bottom:16px}
-.slide-progress-bar{height:100%;background:var(--primary);border-radius:99px;width:0%;transition:width linear}
-.slide-dot{width:9px;height:9px;border-radius:50%;background:var(--border);cursor:pointer;transition:var(--transition);border:none}
-.slide-dot.active{background:var(--primary);width:24px;border-radius:99px}
-.slide-nav-btn{width:34px;height:34px;border-radius:50%;background:var(--bg-main);border:1.5px solid var(--border);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:var(--transition-fast);font-size:.8rem}
-.slide-nav-btn:hover{background:var(--primary);border-color:var(--primary);color:#fff}
-.pie-legend-item{display:flex;align-items:center;gap:8px}
-.pie-legend-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0;display:inline-block}
-
-/* =========================================================
-   TAMBAHAN CSS RESPONSIVE AGRESIF UNTUK HP (SUPER REFINED)
-   ========================================================= */
-.table-responsive {
-    display: block !important;
-    width: 100% !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
+:root {
+  --primary: #1e6eb5;
+  --primary-light: #3b82f6;
+  --success: #10b981;
+  --danger: #ef4444;
+  --bg-body: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.04);
+  --radius-lg: 14px;
+  --radius-md: 10px;
 }
 
+* { box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; }
+a { text-decoration: none; }
+button, input, select, textarea { font-family: inherit; }
+
+/* LAYOUT */
+.admin-wrapper { display: flex; min-height: 100vh; overflow-x: hidden; }
+.admin-main { flex: 1; display: flex; flex-direction: column; width: calc(100% - 260px); }
+.admin-content { padding: 30px; flex: 1; max-width: 1300px; width: 100%; margin: 0 auto; }
+
+/* TOPBAR */
+.topbar {
+  background: var(--bg-card); height: 65px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 30px; border-bottom: 1px solid var(--border-color); z-index: 10;
+}
+.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 500; color: var(--text-muted); }
+.breadcrumb .active { color: var(--primary); font-weight: 600; }
+.topbar-right { display: flex; align-items: center; gap: 15px; }
+.topbar-date { font-size: 0.85rem; font-weight: 500; color: var(--text-muted); background: var(--bg-body); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); }
+
+/* DROPDOWN PROFIL MODERN */
+.user-dropdown-wrapper { position: relative; }
+.topbar-user { 
+    cursor: pointer; padding: 5px 10px; border-radius: 8px; transition: background 0.2s; 
+    display: flex; align-items: center; gap: 10px; 
+}
+.topbar-user:hover { background: rgba(0,0,0,0.04); }
+.t-avatar { width: 32px; height: 32px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; }
+.t-name { font-weight: 600; font-size: 0.9rem; color: var(--text-main); }
+.topbar-user i.fa-chevron-down { font-size: 0.7rem; color: var(--text-muted); transition: transform 0.3s; }
+.user-dropdown-wrapper.active .topbar-user i.fa-chevron-down { transform: rotate(180deg); }
+
+.user-dropdown-menu {
+  position: absolute; top: calc(100% + 15px); right: 0; background: var(--bg-card);
+  border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  width: 250px; opacity: 0; visibility: hidden; transform: translateY(-10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000;
+}
+.user-dropdown-wrapper.active .user-dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+
+.dropdown-header { padding: 18px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid var(--border-color); background: #f8fafc; border-radius: 16px 16px 0 0; }
+.d-avatar { width: 45px; height: 45px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; }
+.d-info { flex: 1; overflow: hidden; }
+.d-name { font-weight: 700; color: var(--text-main); font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.d-role { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; font-weight: 500;}
+
+.dropdown-body { padding: 10px 0; }
+.dropdown-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: var(--text-main); font-size: 0.9rem; font-weight: 600; transition: all 0.2s ease; text-decoration: none; }
+.dropdown-item i { font-size: 1.1rem; color: var(--text-muted); width: 20px; text-align: center; transition: 0.2s; }
+.dropdown-item:hover { background: #f1f5f9; color: var(--primary); padding-left: 25px; }
+.dropdown-item:hover i { color: var(--primary); }
+
+.dropdown-item.text-danger { color: var(--danger); }
+.dropdown-item.text-danger i { color: var(--danger); }
+.dropdown-item.text-danger:hover { background: #fef2f2; color: var(--danger); padding-left: 25px; }
+
+/* PAGE HEADER */
+.page-header { margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
+.page-title { font-size: 1.35rem; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
+.page-subtitle { color: var(--text-muted); font-size: 0.85rem; }
+
+/* 4 KOTAK STATISTIK (MINIMALIS) */
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--bg-card); padding: 18px 20px; border-radius: var(--radius-lg); 
+  border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); 
+  transition: all 0.2s ease; display: flex; align-items: center; gap: 16px;
+}
+.stat-card:hover { border-color: #cbd5e1; box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.stat-icon-wrap { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+.stat-info { flex: 1; min-width: 0; }
+.stat-label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value { font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin: 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat-sub { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; }
+
+.c-saldo .stat-icon-wrap { background: #fef3c7; color: #d97706; }
+.c-masuk .stat-icon-wrap { background: #dbeafe; color: #1e6eb5; }
+.c-keluar .stat-icon-wrap { background: #fee2e2; color: #ef4444; }
+.c-trx .stat-icon-wrap { background: #f3e8ff; color: #7c3aed; }
+
+/* BANNER RINGKASAN BIRU LANGIT / SKY BLUE */
+.banner-card {
+  background: linear-gradient(135deg, #1e6eb5 0%, #3b82f6 50%, #60a5fa 100%);
+  border-radius: var(--radius-lg); padding: 22px 28px; color: #fff;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 10px 25px rgba(30, 110, 181, 0.25); margin-bottom: 24px;
+}
+.banner-left h4 { font-size: 0.75rem; font-weight: 600; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+.banner-left h2 { font-size: 1.25rem; font-weight: 800; }
+.banner-stats { display: flex; gap: 36px; align-items: center; }
+.b-stat-item { text-align: center; }
+.b-stat-item .v { font-size: 1.2rem; font-weight: 800; }
+.b-stat-item .l { font-size: 0.72rem; opacity: 0.85; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.banner-sep { width: 1px; height: 32px; background: rgba(255,255,255,0.3); }
+
+/* CARDS (GRAFIK & TABEL) */
+.card-modern {
+  background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm); padding: 20px 24px; margin-bottom: 24px;
+}
+.card-header-modern { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); }
+.card-header-modern h3 { font-size: 1rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+.card-header-modern h3 i { color: var(--primary); }
+
+/* TABEL MINIMALIS */
+.table-responsive { width: 100%; overflow-x: auto; }
+.table-custom { width: 100%; border-collapse: collapse; }
+.table-custom th { 
+  background: #f8fafc; color: var(--text-muted); font-weight: 600; font-size: 0.72rem; 
+  text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; text-align: left; 
+  border-bottom: 1px solid var(--border-color); white-space: nowrap;
+}
+.table-custom td { padding: 12px 14px; border-bottom: 1px solid var(--border-color); font-size: 0.85rem; color: var(--text-main); vertical-align: middle; }
+.table-custom tr:last-child td { border-bottom: none; }
+.table-custom tr:hover td { background-color: #f8fafc; }
+
+.badge-custom { padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+.badge-blue { background: #eff6ff; color: #1e6eb5; }
+.badge-green { background: #ebf5ff; color: #1e6eb5; }
+.badge-red { background: #fef2f2; color: #ef4444; }
+
+/* SLIDESHOW GRAFIK */
+.grafik-slide { display: none; animation: fadeIn 0.3s ease; }
+.grafik-slide.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.slide-progress-wrap { height: 3px; background: var(--border-color); border-radius: 99px; overflow: hidden; margin-bottom: 16px; }
+.slide-progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width linear; }
+
+.slide-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+.slide-title-box { display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
+.slide-counter { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); background: var(--bg-body); padding: 4px 10px; border-radius: 6px; }
+
+.slide-dots { display: flex; justify-content: center; gap: 6px; margin-top: 16px; }
+.sdot { width: 6px; height: 6px; border-radius: 50%; background: #cbd5e1; border: none; cursor: pointer; transition: 0.3s; }
+.sdot.active { background: var(--primary); width: 18px; border-radius: 99px; }
+
+/* Alert */
+.alert { padding: 12px 16px; border-radius: var(--radius-md); margin-bottom: 20px; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 10px; }
+.alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+.alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .banner-card { flex-direction: column; text-align: center; gap: 15px; }
+  .banner-sep { display: none; }
+  .banner-stats { justify-content: space-around; width: 100%; }
+}
 @media (max-width: 768px) {
-    /* Mencegah layar geser kanan-kiri yang tidak disengaja */
-    html, body {
-        overflow-x: hidden !important;
-        max-width: 100vw !important;
-    }
-
-    .admin-wrapper {
-        display: block !important;
-        width: 100% !important;
-        overflow-x: hidden !important;
-    }
-    
-    .admin-main {
-        width: 100% !important;
-        margin-left: 0 !important;
-        padding: 0 !important;
-        box-sizing: border-box !important;
-    }
-
-    /* Merapikan padding utama agar lega */
-    .admin-content {
-        width: 100% !important;
-        padding: 12px !important; 
-        box-sizing: border-box !important;
-        margin: 0 !important;
-    }
-
-    /* Tipografi hirarki header */
-    .page-title {
-        font-size: 1.35rem !important;
-        margin-bottom: 4px !important;
-    }
-    .page-subtitle {
-        font-size: 0.85rem !important;
-        margin-bottom: 15px !important;
-    }
-
-    .topbar {
-        width: 100% !important;
-        box-sizing: border-box !important;
-        padding: 12px 15px !important;
-    }
-
-    /* 4 Kotak Stat Atas dijadikan 2 Kolom (Kotak kecil rapi) */
-    .grid-4 {
-        display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 12px !important;
-        width: 100% !important;
-    }
-    
-    .stat-card {
-        padding: 15px 12px !important;
-        border-radius: 12px !important;
-    }
-    .stat-label { font-size: 0.72rem !important; }
-    .stat-value { font-size: 1.05rem !important; margin: 4px 0 !important; }
-    
-    /* Layout Banner Ringkasan Bulan Ini (Yang bermasalah di SS) */
-    .banner-header {
-        flex-direction: column !important;
-        text-align: center !important;
-        gap: 15px !important;
-    }
-    .banner-stats {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important; /* Kiri Kanan */
-        gap: 15px !important;
-        width: 100% !important;
-    }
-    .banner-sep {
-        display: none !important; /* Hapus garis vertikal yang nyasar */
-    }
-    .selisih-box {
-        grid-column: span 2 !important; /* Paksa menempati 2 kolom di bawahnya */
-        padding-top: 15px !important;
-        border-top: 1px dashed rgba(255,255,255,0.3) !important; /* Garis horizontal baru */
-    }
-    .banner-actions {
-        justify-content: center !important;
-        width: 100% !important;
-        margin-top: 5px !important;
-    }
-
-    /* Layout Card & Table */
-    .card {
-        width: 100% !important;
-        box-sizing: border-box !important;
-        margin-left: 0 !important;
-        margin-right: 0 !important;
-        border-radius: 12px !important; 
-    }
-    
-    .table-responsive .table {
-        min-width: 650px !important; 
-    }
-    
-    .table th, .table td {
-        padding: 10px 8px !important;
-        font-size: 0.85rem !important;
-    }
-    
-    .card-header {
-        display: flex !important;
-        flex-direction: row !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        gap: 8px !important;
-        padding: 12px 15px !important;
-    }
-    
-    .t-name {
-        display: none !important;
-    }
-    
-    .grafik-slide > div {
-        height: 230px !important;
-    }
-    .grafik-slide > div[style*="display:flex"] {
-        flex-direction: column !important;
-        gap: 12px !important;
-    }
-    .slide-nav-btn { transform: scale(1.05); margin: 0 2px; }
+  .admin-main { width: 100%; margin-left: 0; }
+  .admin-content { padding: 15px; }
+  .topbar { padding: 0 15px; }
+  .banner-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .selisih-box { grid-column: span 2; border-top: 1px dashed rgba(255,255,255,0.3); padding-top: 10px; }
+  
+  /* Sembunyikan elemen topbar yang tidak muat di HP */
+  .t-name, .topbar-date, .fa-chevron-down { display: none; }
 }
-/* ========================================================= */
+@media (max-width: 480px) {
+  .grid-4 { grid-template-columns: 1fr; }
+  .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+}
 </style>
 </head>
 <body>
+
 <div class="admin-wrapper">
-<?php include '../includes/partials/sidebar-admin.php'; ?>
-<div class="admin-main">
+  <!-- SIDEBAR -->
+  <?php include '../includes/partials/sidebar-admin.php'; ?>
 
-  <!-- TOPBAR -->
-  <div class="topbar">
-    <div class="topbar-left">
-      <div class="topbar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></div>
-      <div class="breadcrumb">
-        <span class="bc-item"><i class="fas fa-home"></i></span>
-        <span class="bc-sep"><i class="fas fa-chevron-right"></i></span>
-        <span class="bc-item active">Dashboard</span>
+  <div class="admin-main">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div id="sidebarToggle" style="cursor:pointer; font-size:1.1rem; color:var(--text-muted);"><i class="fas fa-bars"></i></div>
+        <div class="breadcrumb">
+          <i class="fas fa-home"></i> <i class="fas fa-chevron-right" style="font-size:0.6rem; opacity:0.5;"></i> <span class="active">Dashboard</span>
+        </div>
       </div>
-    </div>
-    <div class="topbar-right">
-      <div class="topbar-date"><i class="fas fa-calendar-alt"></i> <?= date('d F Y') ?></div>
-      <div class="topbar-user">
-        <div class="t-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
-        <div class="t-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="admin-content">
-    <?php if ($alert): ?>
-    <div class="alert alert-<?= $alert['type'] ?>">
-      <i class="fas fa-<?= $alert['type']=='success'?'check-circle':'exclamation-circle' ?>"></i>
-      <?= htmlspecialchars($alert['message']) ?>
-    </div>
-    <?php endif; ?>
-
-    <div class="page-header">
-      <h1 class="page-title"><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
-      <p class="page-subtitle">Ringkasan keuangan kas <?= MASJID_NAME ?> – <?= date('F Y') ?></p>
-    </div>
-
-    <!-- STAT CARDS -->
-    <div class="grid-4 mb-3">
-      <div class="stat-card gold animate-fadeIn delay-1">
-        <div class="stat-icon"><i class="fas fa-wallet"></i></div>
-        <div class="stat-label">Saldo Kas</div>
-        <div class="stat-value"><?= formatRupiah($saldo) ?></div>
-        <div class="stat-sub"><i class="fas fa-sync up"></i> Real-time</div>
-      </div>
-      <div class="stat-card green animate-fadeIn delay-2">
-        <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
-        <div class="stat-label">Total Pemasukan</div>
-        <div class="stat-value"><?= formatRupiah($total_masuk) ?></div>
-        <div class="stat-sub"><i class="fas fa-calendar-alt up"></i> Real-time</div>
-      </div>
-      <div class="stat-card red animate-fadeIn delay-3">
-        <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
-        <div class="stat-label">Total Pengeluaran</div>
-        <div class="stat-value"><?= formatRupiah($total_keluar) ?></div>
-        <div class="stat-sub"><i class="fas fa-calendar-alt down"></i> Real-time</div>
-      </div>
-      <div class="stat-card blue animate-fadeIn delay-4">
-        <div class="stat-icon"><i class="fas fa-exchange-alt"></i></div>
-        <div class="stat-label">Total Transaksi</div>
-        <div class="stat-value"><?= number_format($total_trx) ?></div>
-        <div class="stat-sub"><i class="fas fa-list"></i> <?= $trx_bln ?> Real-time</div>
-      </div>
-    </div>
-
-    <!-- BANNER BULAN INI -->
-    <div class="card mb-3 animate-fadeIn" style="background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border:none;">
-      <div class="card-body" style="padding:22px 28px">
-        <div class="banner-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px">
-          <div>
-            <div style="font-size:.75rem;opacity:.75;text-transform:uppercase;letter-spacing:.5px">Ringkasan Bulan Ini</div>
-            <!-- MENAMBAHKAN TANGGAL HARI INI SECARA LENGKAP -->
-            <div style="font-size:1.1rem;font-weight:800;margin-top:3px"><?= date('d F Y') ?></div>
+      <div class="topbar-right">
+        <div class="topbar-date"><i class="fas fa-calendar-alt me-1" style="margin-right: 4px;"></i> <?= tgl_indo(date('Y-m-d')) ?></div>
+        
+        <!-- DROPDOWN PROFIL USER -->
+        <div class="user-dropdown-wrapper" id="userDropdownWrap">
+          <div class="topbar-user" id="userDropdownTrigger">
+            <div class="t-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
+            <div class="t-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
+            <i class="fas fa-chevron-down"></i>
           </div>
-          <!-- STRUKTUR CLASS BARU UNTUK CSS OVERRIDE -->
-          <div class="banner-stats" style="display:flex;gap:28px;flex-wrap:wrap;align-items:center;">
-            <div style="text-align:center"><div style="font-size:1.3rem;font-weight:800"><?= formatRupiah($masuk_bln) ?></div><div style="font-size:.72rem;opacity:.75"><i class="fas fa-arrow-down"></i> Pemasukan</div></div>
-            <div class="banner-sep" style="width:1px;height:40px;background:rgba(255,255,255,.2)"></div>
-            <div style="text-align:center"><div style="font-size:1.3rem;font-weight:800"><?= formatRupiah($keluar_bln) ?></div><div style="font-size:.72rem;opacity:.75"><i class="fas fa-arrow-up"></i> Pengeluaran</div></div>
-            <div class="banner-sep" style="width:1px;height:40px;background:rgba(255,255,255,.2)"></div>
-            <div class="selisih-box" style="text-align:center"><div style="font-size:1.3rem;font-weight:800;<?= ($masuk_bln-$keluar_bln)<0?'color:#fca5a5':'' ?>"><?= formatRupiah($masuk_bln-$keluar_bln) ?></div><div style="font-size:.72rem;opacity:.75"><i class="fas fa-balance-scale"></i> Selisih</div></div>
+          
+          <div class="user-dropdown-menu">
+            <div class="dropdown-header">
+              <div class="d-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
+              <div class="d-info">
+                <div class="d-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
+                <div class="d-role">@admin</div>
+              </div>
+            </div>
+            <div class="dropdown-body">
+              <a href="profil.php" class="dropdown-item">
+                <i class="fas fa-user-cog"></i> Pengaturan Akun
+              </a>
+              <a href="#" class="dropdown-item text-danger" onclick="openLogoutModal()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+              </a>
+            </div>
           </div>
-          <div class="banner-actions" style="display:flex;gap:8px">
-            <a href="kas-masuk.php" class="btn btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.3)"><i class="fas fa-plus"></i> Kas Masuk</a>
-            <a href="kas-keluar.php" class="btn btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.3)"><i class="fas fa-minus"></i> Kas Keluar</a>
+        </div>
+        <!-- END DROPDOWN -->
+
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="admin-content">
+      
+      <?php if ($alert): ?>
+      <div class="alert alert-<?= $alert['type'] ?>">
+        <i class="fas fa-<?= $alert['type']=='success'?'check-circle':'exclamation-circle' ?>"></i> <?= htmlspecialchars($alert['message']) ?>
+      </div>
+      <?php endif; ?>
+
+      <!-- PAGE HEADER -->
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Dashboard</h1>
+          <p class="page-subtitle">Ringkasan kas Masjid Baeturrohman – <?= tgl_indo(date('Y-m-d')) ?></p>
+        </div>
+      </div>
+
+      <!-- 4 STAT CARDS (MINIMALIS) -->
+      <div class="grid-4">
+        <div class="stat-card c-saldo">
+          <div class="stat-icon-wrap"><i class="fas fa-wallet"></i></div>
+          <div class="stat-info">
+            <div class="stat-label">Saldo Kas</div>
+            <div class="stat-value"><?= formatRupiah($saldo) ?></div>
+            <div class="stat-sub">Real-time</div>
+          </div>
+        </div>
+        <div class="stat-card c-masuk">
+          <div class="stat-icon-wrap"><i class="fas fa-arrow-down"></i></div>
+          <div class="stat-info">
+            <div class="stat-label">Pemasukan</div>
+            <div class="stat-value"><?= formatRupiah($total_masuk) ?></div>
+            <div class="stat-sub">Total Keseluruhan</div>
+          </div>
+        </div>
+        <div class="stat-card c-keluar">
+          <div class="stat-icon-wrap"><i class="fas fa-arrow-up"></i></div>
+          <div class="stat-info">
+            <div class="stat-label">Pengeluaran</div>
+            <div class="stat-value"><?= formatRupiah($total_keluar) ?></div>
+            <div class="stat-sub">Total Keseluruhan</div>
+          </div>
+        </div>
+        <div class="stat-card c-trx">
+          <div class="stat-icon-wrap"><i class="fas fa-exchange-alt"></i></div>
+          <div class="stat-info">
+            <div class="stat-label">Transaksi</div>
+            <div class="stat-value"><?= number_format($total_trx) ?></div>
+            <div class="stat-sub">Total Tercatat</div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- GRAFIK SLIDESHOW LENGKAP -->
-    <div class="card mb-3 animate-fadeIn">
-      <div class="card-header" style="padding-bottom:16px;border-bottom:1px solid var(--border-light)">
-        <div class="card-title"><i class="fas fa-chart-bar"></i> Visualisasi Data Keuangan</div>
+      <!-- BANNER RINGKASAN BULAN INI -->
+      <div class="banner-card">
+        <div class="banner-left">
+          <h4>Bulan Ini</h4>
+          <h2><?= tgl_indo(date('Y-m-d')) ?></h2>
+        </div>
+        <div class="banner-stats">
+          <div class="b-stat-item">
+            <div class="v"><?= formatRupiah($masuk_bln) ?></div>
+            <div class="l">Pemasukan</div>
+          </div>
+          <div class="banner-sep"></div>
+          <div class="b-stat-item">
+            <div class="v"><?= formatRupiah($keluar_bln) ?></div>
+            <div class="l">Pengeluaran</div>
+          </div>
+          <div class="banner-sep"></div>
+          <div class="b-stat-item selisih-box">
+            <div class="v" style="<?= ($masuk_bln-$keluar_bln)<0 ? 'color:#fecaca;' : '' ?>"><?= formatRupiah($masuk_bln-$keluar_bln) ?></div>
+            <div class="l">Selisih</div>
+          </div>
+        </div>
       </div>
-      <div class="card-body">
 
-        <!-- Progress bar -->
+      <!-- GRAFIK SLIDESHOW (3 SLIDE SAJA) -->
+      <div class="card-modern">
+        <div class="card-header-modern">
+          <h3><i class="fas fa-chart-area"></i> Visualisasi Keuangan</h3>
+        </div>
+        
         <div class="slide-progress-wrap"><div class="slide-progress-bar" id="slideProgress"></div></div>
 
-        <!-- Slide Nav -->
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px">
-          <div>
-            <div style="display:inline-flex;align-items:center;gap:7px;background:var(--primary);color:#fff;padding:5px 14px;border-radius:99px;font-size:.78rem;font-weight:700">
-              <i id="slideIcon" class="fas fa-chart-bar"></i> <span id="slideTitle">Pemasukan vs Pengeluaran</span>
-            </div>
-            <div style="font-size:.75rem;color:var(--text-muted);margin-top:6px" id="slideDesc">6 bulan terakhir</div>
+        <div class="slide-nav">
+          <div class="slide-title-box">
+            <i id="slideIcon" class="fas fa-chart-bar"></i> <span id="slideTitle">Pemasukan vs Pengeluaran (6 Bulan)</span>
           </div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="font-size:.72rem;color:rgba(255,255,255,.6);background:rgba(255,255,255,.1);padding:3px 10px;border-radius:99px" id="slideCounter">1 / 4</span>
-          </div>
+          <div class="slide-counter" id="slideCounter">1 / 3</div>
         </div>
 
-        <!-- Slide 1: Bar -->
+        <!-- Slide 1: Bar Chart 6 Bulan -->
         <div class="grafik-slide active" id="slide-0">
-          <div style="position:relative;height:280px"><canvas id="barChart"></canvas></div>
+          <div style="position:relative; height:260px; width:100%;"><canvas id="barChart"></canvas></div>
         </div>
-        <!-- Slide 2: Line -->
+
+        <!-- Slide 2: Line Chart 12 Bulan -->
         <div class="grafik-slide" id="slide-1">
-          <div style="position:relative;height:280px"><canvas id="lineChart"></canvas></div>
+          <div style="position:relative; height:260px; width:100%;"><canvas id="lineChart"></canvas></div>
         </div>
-        <!-- Slide 3: Pie Masuk -->
+
+        <!-- Slide 3: Doughnut Chart Gabungan (Pemasukan vs Pengeluaran) -->
         <div class="grafik-slide" id="slide-2">
-          <?php if (count($pid)): ?>
-          <div style="display:flex;align-items:center;justify-content:center;gap:32px;flex-wrap:wrap;padding:8px 0">
-            <div style="position:relative;width:230px;height:230px;flex-shrink:0"><canvas id="pieIncome"></canvas></div>
-            <div id="legIncome" style="display:flex;flex-direction:column;gap:9px;max-width:280px"></div>
-          </div>
+          <?php if ($total_masuk > 0 || $total_keluar > 0): ?>
+            <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:30px; width:100%;">
+              <div style="position:relative; width:220px; height:220px;"><canvas id="pieCombined"></canvas></div>
+              <div id="legCombined" style="display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
           <?php else: ?>
-          <div class="empty-state"><div class="es-icon"><i class="fas fa-chart-pie"></i></div><h3>Belum ada data pemasukan <?= $tahun ?></h3></div>
-          <?php endif; ?>
-        </div>
-        <!-- Slide 4: Pie Keluar -->
-        <div class="grafik-slide" id="slide-3">
-          <?php if (count($ped)): ?>
-          <div style="display:flex;align-items:center;justify-content:center;gap:32px;flex-wrap:wrap;padding:8px 0">
-            <div style="position:relative;width:230px;height:230px;flex-shrink:0"><canvas id="pieExpense"></canvas></div>
-            <div id="legExpense" style="display:flex;flex-direction:column;gap:9px;max-width:280px"></div>
-          </div>
-          <?php else: ?>
-          <div class="empty-state"><div class="es-icon"><i class="fas fa-chart-pie"></i></div><h3>Belum ada data pengeluaran <?= $tahun ?></h3></div>
+            <div style="text-align:center; padding:30px; color:var(--text-muted);"><p>Belum ada data keuangan untuk ditampilkan</p></div>
           <?php endif; ?>
         </div>
 
-        <!-- Dots -->
-        <div style="display:flex;justify-content:center;gap:8px;margin-top:20px">
-          <button class="slide-dot active" onclick="goToSlide(0)"></button>
-          <button class="slide-dot" onclick="goToSlide(1)"></button>
-          <button class="slide-dot" onclick="goToSlide(2)"></button>
-          <button class="slide-dot" onclick="goToSlide(3)"></button>
+        <div class="slide-dots">
+          <button class="sdot active" onclick="goToSlide(0)"></button>
+          <button class="sdot" onclick="goToSlide(1)"></button>
+          <button class="sdot" onclick="goToSlide(2)"></button>
         </div>
       </div>
-    </div>
 
-    <!-- TRANSAKSI TERBARU -->
-    <div class="card animate-fadeIn">
-      <div class="card-header">
-        <div class="card-title"><i class="fas fa-history"></i> Transaksi Terbaru</div>
-        <a href="laporan.php" class="btn btn-ghost btn-sm"><i class="fas fa-list"></i> Lihat Semua</a>
-      </div>
-      <div class="card-body" style="padding:0">
-        <!-- TABEL RESPONSIVE -->
+      <!-- TRANSAKSI TERBARU -->
+      <div class="card-modern">
+        <div class="card-header-modern">
+          <h3><i class="fas fa-list-ul"></i> Transaksi Terbaru</h3>
+          <a href="laporan.php" style="font-size:0.8rem; font-weight:600; color:var(--primary);">Lihat Semua &rarr;</a>
+        </div>
         <div class="table-responsive">
-            <table class="table">
-              <thead>
-                <tr><th>Tanggal</th><th>Keterangan</th><th>Kategori</th><th>Jenis</th><th class="text-right">Jumlah</th><th>Aksi</th></tr>
-              </thead>
-              <tbody>
-                <?php while ($r = $trx_recent->fetch_assoc()): ?>
-                <tr>
-                  <td style="white-space:nowrap"><?= date('d M Y', strtotime($r['tanggal'])) ?></td>
-                  <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?= htmlspecialchars($r['keterangan']) ?></td>
-                  <td><span class="badge badge-primary" style="white-space:nowrap;"><?= htmlspecialchars($r['nama_kategori']) ?></span></td>
-                  <td><?= $r['jenis']=='masuk' ? '<span class="badge badge-success" style="white-space:nowrap;"><i class="fas fa-arrow-down"></i> Masuk</span>' : '<span class="badge badge-danger" style="white-space:nowrap;"><i class="fas fa-arrow-up"></i> Keluar</span>' ?></td>
-                  <td class="text-right fw-600 <?= $r['jenis']=='masuk'?'text-success':'text-danger' ?>" style="white-space:nowrap;"><?= ($r['jenis']=='masuk'?'+':'-').formatRupiah($r['jumlah']) ?></td>
-                  <td><a href="<?= $r['jenis']=='masuk'?'kas-masuk':'kas-keluar' ?>.php?edit=<?= $r['id'] ?>" class="btn btn-ghost btn-icon btn-sm" data-tooltip="Edit"><i class="fas fa-edit"></i></a></td>
-                </tr>
-                <?php endwhile; ?>
-              </tbody>
-            </table>
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Keterangan</th>
+                <th>Kategori</th>
+                <th>Jenis</th>
+                <th style="text-align: right;">Jumlah</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php while ($r = $trx_recent->fetch_assoc()): ?>
+              <tr>
+                <td style="white-space:nowrap; color:var(--text-muted);"><?= tgl_indo($r['tanggal']) ?></td>
+                <td style="max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:500;"><?= htmlspecialchars($r['keterangan']) ?></td>
+                <td><span class="badge-custom badge-blue"><?= htmlspecialchars($r['nama_kategori']) ?></span></td>
+                <td>
+                  <?php if($r['jenis'] == 'masuk'): ?>
+                    <span class="badge-custom badge-green">Masuk</span>
+                  <?php else: ?>
+                    <span class="badge-custom badge-red">Keluar</span>
+                  <?php endif; ?>
+                </td>
+                <td style="text-align: right; font-weight: 600; color: <?= $r['jenis']=='masuk' ? '#1e6eb5' : '#ef4444' ?>;">
+                  <?= ($r['jenis']=='masuk'?'+':'-') . formatRupiah($r['jumlah']) ?>
+                </td>
+              </tr>
+              <?php endwhile; ?>
+            </tbody>
+          </table>
         </div>
       </div>
-    </div>
 
-  </div><!-- /admin-content -->
-</div><!-- /admin-main -->
-</div><!-- /admin-wrapper -->
+    </div>
+  </div>
+</div>
 
 <script>
-Chart.defaults.font.family = "'Poppins',sans-serif";
-Chart.defaults.color = '#6b7280';
-Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15,45,74,.93)';
-Chart.defaults.plugins.tooltip.titleColor = '#fff';
-Chart.defaults.plugins.tooltip.bodyColor   = 'rgba(255,255,255,.85)';
-Chart.defaults.plugins.tooltip.padding     = 12;
-Chart.defaults.plugins.tooltip.cornerRadius = 8;
+// Logic Dropdown User
+const userDropdownWrap = document.getElementById('userDropdownWrap');
+const userDropdownTrigger = document.getElementById('userDropdownTrigger');
+
+if (userDropdownTrigger && userDropdownWrap) {
+    userDropdownTrigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        userDropdownWrap.classList.toggle('active');
+    });
+    
+    document.addEventListener('click', function(e) {
+        if (!userDropdownWrap.contains(e.target)) {
+            userDropdownWrap.classList.remove('active');
+        }
+    });
+}
+
+// Logic Toggle Sidebar
+const sidebarToggle = document.getElementById('sidebarToggle');
+const sidebar = document.getElementById('adminSidebar') || document.querySelector('.sidebar');
+const overlay = document.getElementById('sidebarOverlay');
+
+if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (window.innerWidth <= 768) {
+            if (sidebar) sidebar.classList.toggle('open');
+            if (overlay) overlay.classList.toggle('active');
+        } else {
+            const wrapper = document.querySelector('.admin-wrapper');
+            if (wrapper) wrapper.classList.toggle('toggled');
+        }
+    });
+}
+
+if (overlay) {
+    overlay.addEventListener('click', function() {
+        if (sidebar) sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+    });
+}
+
+// Chart Configurations
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 12;
+Chart.defaults.color = '#64748b';
+Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15,23,42,0.9)';
+Chart.defaults.plugins.tooltip.padding = 10;
+Chart.defaults.plugins.tooltip.cornerRadius = 6;
 
 const fmtRp = v => 'Rp ' + new Intl.NumberFormat('id-ID').format(v);
-const CG = ['#1e6eb5','#2d86d4','#c9a84c','#3b82f6','#f59e0b','#8b5cf6','#ec4899','#14b8a6'];
-const CR = ['#ef4444','#f87171','#dc2626','#b91c1c','#fca5a5','#ff8080','#fecaca','#c53030'];
 
-// Bar Chart
+// 1. Bar Chart (Pemasukan: Biru #1e6eb5, Pengeluaran: Merah #ef4444)
 new Chart(document.getElementById('barChart').getContext('2d'), {
   type:'bar',
   data:{labels:<?= json_encode($chart_labels) ?>,datasets:[
-    {label:'Pemasukan',   data:<?= json_encode($chart_masuk) ?>,  backgroundColor:'rgba(30,110,181,.85)',borderRadius:7,borderSkipped:false},
-    {label:'Pengeluaran', data:<?= json_encode($chart_keluar) ?>, backgroundColor:'rgba(239,68,68,.75)', borderRadius:7,borderSkipped:false}
+    {label:'Pemasukan', data:<?= json_encode($chart_masuk) ?>, backgroundColor:'#1e6eb5', borderRadius:4},
+    {label:'Pengeluaran', data:<?= json_encode($chart_keluar) ?>, backgroundColor:'#ef4444', borderRadius:4}
   ]},
-  options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-    plugins:{legend:{position:'bottom',labels:{padding:18,font:{size:11},usePointStyle:true}},
-      tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmtRp(c.raw)}`}}},
-    scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{callback:v=>fmtRp(v)}}},
-    animation:{duration:900,easing:'easeInOutQuart'}
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{usePointStyle:true, padding:15, font:{weight:'500'}}}},
+    scales:{x:{grid:{display:false}},y:{grid:{color:'#f1f5f9'},ticks:{callback:v=>fmtRp(v)}}}
   }
 });
 
-// Line Chart
+// 2. Line Chart (Pemasukan & Pengeluaran 12 Bulan)
 new Chart(document.getElementById('lineChart').getContext('2d'), {
   type:'line',
-  data:{labels:<?= json_encode($line_labels) ?>,datasets:[{
-    label:'Saldo Kumulatif',data:<?= json_encode($line_saldo) ?>,
-    borderColor:'#1e6eb5',backgroundColor:'rgba(30,110,181,.08)',
-    borderWidth:3,fill:true,tension:.4,
-    pointBackgroundColor:'#1e6eb5',pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:5,pointHoverRadius:8
-  }]},
-  options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` Saldo: ${fmtRp(c.raw)}`}}},
-    scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{callback:v=>fmtRp(v)}}},
-    animation:{duration:900}
+  data:{
+    labels:<?= json_encode($line_labels) ?>,
+    datasets:[
+      {
+        label:'Pemasukan',
+        data:<?= json_encode($line_masuk) ?>,
+        borderColor:'#1e6eb5',
+        backgroundColor:'rgba(30,110,181,0.05)',
+        borderWidth:2.5,
+        fill:true,
+        tension:0.3,
+        pointBackgroundColor:'#1e6eb5',
+        pointRadius:3
+      },
+      {
+        label:'Pengeluaran',
+        data:<?= json_encode($line_keluar) ?>,
+        borderColor:'#ef4444',
+        backgroundColor:'rgba(239,68,68,0.05)',
+        borderWidth:2.5,
+        fill:true,
+        tension:0.3,
+        pointBackgroundColor:'#ef4444',
+        pointRadius:3
+      }
+    ]
+  },
+  options:{
+    responsive:true,
+    maintainAspectRatio:false,
+    plugins:{
+      legend:{
+        display:true,
+        position:'bottom',
+        labels:{usePointStyle:true, padding:15, font:{weight:'500'}}
+      }
+    },
+    scales:{
+      x:{grid:{display:false}},
+      y:{grid:{color:'#f1f5f9'},ticks:{callback:v=>fmtRp(v)}}
+    }
   }
 });
 
-// Pie Helper
-function buildPie(cid, lid, labels, data, colors) {
-  if (!labels.length) return;
-  new Chart(document.getElementById(cid).getContext('2d'), {
+// 3. Doughnut Chart Gabungan (Pemasukan vs Pengeluaran)
+const pieLabels = <?= json_encode($pie_combined_labels) ?>;
+const pieData   = <?= json_encode($pie_combined_data) ?>;
+const pieColors = ['#1e6eb5', '#ef4444'];
+
+if (document.getElementById('pieCombined')) {
+  new Chart(document.getElementById('pieCombined').getContext('2d'), {
     type:'doughnut',
-    data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:3,borderColor:'#fff',hoverOffset:12}]},
-    options:{responsive:true,maintainAspectRatio:true,cutout:'58%',
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${fmtRp(c.raw)}`}}},
-      animation:{duration:900,animateRotate:true,animateScale:true}
+    data:{
+      labels: pieLabels,
+      datasets:[{
+        data: pieData,
+        backgroundColor: pieColors,
+        borderWidth: 0
+      }]
+    },
+    options:{
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '68%',
+      plugins:{ legend:{ display: false } }
     }
   });
-  const leg = document.getElementById(lid), total = data.reduce((a,b)=>a+b,0);
-  labels.forEach((l,i) => {
-    const pct = total>0?((data[i]/total)*100).toFixed(1):0;
-    leg.innerHTML += `<div class="pie-legend-item"><span class="pie-legend-dot" style="background:${colors[i]}"></span><div><div style="font-size:.8rem;font-weight:600;color:var(--text-primary)">${l}</div><div style="font-size:.72rem;color:var(--text-muted)">${fmtRp(data[i])} &bull; ${pct}%</div></div></div>`;
+
+  const leg = document.getElementById('legCombined');
+  const total = pieData.reduce((a,b)=>a+b,0);
+  pieLabels.forEach((l, i) => {
+    const pct = total > 0 ? ((pieData[i] / total) * 100).toFixed(1) : 0;
+    leg.innerHTML += `
+      <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem;font-weight:600;color:var(--text-main);">
+        <span style="width:10px;height:10px;border-radius:50%;background:${pieColors[i]}"></span>
+        ${l}
+        <span style="margin-left:auto;color:var(--text-muted);font-weight:500;">${fmtRp(pieData[i])} (${pct}%)</span>
+      </div>`;
   });
 }
-buildPie('pieIncome',  'legIncome',  <?= json_encode($pil) ?>, <?= json_encode($pid) ?>, CG);
-buildPie('pieExpense', 'legExpense', <?= json_encode($pel) ?>, <?= json_encode($ped) ?>, CR);
 
-// Slideshow
+// Slideshow Logic (3 Slide)
 const DURATION = 10000;
-const slides   = document.querySelectorAll('.grafik-slide');
-const dots     = document.querySelectorAll('.slide-dot');
-const progress = document.getElementById('slideProgress');
+const slides = document.querySelectorAll('.grafik-slide'), dots = document.querySelectorAll('.sdot'), progress = document.getElementById('slideProgress');
 const SLIDE_INFO = [
-  {icon:'fas fa-chart-bar',  title:'Pemasukan vs Pengeluaran', desc:'Perbandingan 6 bulan terakhir'},
-  {icon:'fas fa-chart-line', title:'Saldo Kumulatif',           desc:'Tren saldo sepanjang tahun '+<?= $tahun ?>},
-  {icon:'fas fa-chart-pie',  title:'Proporsi Pemasukan',       desc:'Distribusi pemasukan tahun '+<?= $tahun ?>},
-  {icon:'fas fa-chart-pie',  title:'Proporsi Pengeluaran',     desc:'Distribusi pengeluaran tahun '+<?= $tahun ?>},
+  {title:'Pemasukan vs Pengeluaran (6 Bulan)'},
+  {title:'Trend Pemasukan & Pengeluaran (12 Bulan)'},
+  {title:'Proporsi Keseluruhan Keuangan'},
 ];
 let cur=0, paused=false, timer=null;
 
 function goToSlide(n) {
   slides[cur].classList.remove('active'); dots[cur].classList.remove('active');
-  cur = (n+slides.length)%slides.length;
+  cur = (n + slides.length) % slides.length;
   slides[cur].classList.add('active'); dots[cur].classList.add('active');
-  const info = SLIDE_INFO[cur];
-  document.getElementById('slideIcon').className  = info.icon;
-  document.getElementById('slideTitle').textContent = info.title;
-  document.getElementById('slideDesc').textContent  = info.desc;
-  document.getElementById('slideCounter').textContent = `${cur+1} / ${slides.length}`;
+  document.getElementById('slideTitle').textContent = SLIDE_INFO[cur].title;
+  document.getElementById('slideCounter').textContent = `${cur+1} / 3`;
   resetProgress();
 }
-function changeSlide(dir) { goToSlide(cur+dir); if(!paused) startAuto(); }
 function startAuto() { clearTimeout(timer); timer=setTimeout(()=>{ if(!paused){goToSlide(cur+1);startAuto();} },DURATION); }
 function resetProgress() {
   progress.style.transition='none'; progress.style.width='0%';
@@ -493,33 +639,15 @@ function resetProgress() {
 }
 function togglePause() {
   paused=!paused;
-  if(paused){
-    clearTimeout(timer);
-    const w=getComputedStyle(progress).width;
-    progress.style.transition='none';
-    progress.style.width=w;
-    progress.style.opacity='0.4';
-  } else {
-    progress.style.opacity='1';
-    startAuto();
-    resetProgress();
-  }
+  if(paused){ clearTimeout(timer); progress.style.transition='none'; progress.style.width=getComputedStyle(progress).width; progress.style.opacity='0.4'; }
+  else { progress.style.opacity='1'; startAuto(); resetProgress(); }
 }
 startAuto(); resetProgress();
 
-// ✅ Klik area grafik = pause/play
 document.querySelectorAll('.grafik-slide').forEach(el => {
   el.style.cursor = 'pointer';
-  el.addEventListener('click', function(e) {
-    if (!e.target.closest('.slide-dot,a,button,.pie-legend-item')) togglePause();
-  });
+  el.addEventListener('click', function(e) { if (!e.target.closest('.sdot,a,button')) togglePause(); });
 });
-
-// Sidebar toggle
-const sidebar=document.getElementById('adminSidebar');
-const overlay=document.getElementById('sidebarOverlay');
-document.getElementById('sidebarToggle').addEventListener('click',()=>{ sidebar.classList.toggle('open'); overlay.classList.toggle('active'); });
-if(overlay){ overlay.addEventListener('click',()=>{ sidebar.classList.remove('open'); overlay.classList.remove('active'); }); }
 </script>
 </body>
 </html>

@@ -2,6 +2,28 @@
 require_once '../includes/config.php';
 requireLogin();
 
+// Fungsi Helper Bulan & Tanggal Indonesia
+function formatBulanIndoPub($bulan_angka) {
+    $bulan = [
+        1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    return $bulan[(int)$bulan_angka] ?? '';
+}
+
+function tglIndoKasMasuk($tanggal) {
+    if (empty($tanggal) || $tanggal == '0000-00-00') return '-';
+    $bulan = [
+        1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    $ts = strtotime($tanggal);
+    $tgl = date('d', $ts);
+    $bln = $bulan[(int)date('m', $ts)];
+    $thn = date('Y', $ts);
+    return "$tgl $bln $thn";
+}
+
 // ---- Handle POST (tambah/edit) ----
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id          = (int)($_POST['id'] ?? 0);
@@ -38,18 +60,17 @@ if (isset($_GET['delete'])) {
     redirect(APP_URL . '/admin/kas-masuk.php');
 }
 
-// ---- Handle EDIT (prefill form) ----
-$edit_data = null;
-if (isset($_GET['edit'])) {
-    $id = (int)$_GET['edit'];
-    $edit_data = $conn->query("SELECT * FROM transaksi WHERE id=$id AND jenis='masuk' AND deleted_at IS NULL")->fetch_assoc();
-}
-
 // ---- Kategori Masuk ----
 $kategori_list = $conn->query("SELECT * FROM kategori WHERE jenis='masuk' ORDER BY nama_kategori");
 
 // ---- Filter ----
-$filter_bulan = sanitize($_GET['bulan'] ?? date('Y-m'));
+$default_filter = '2026-08';
+$filter_bulan = sanitize($_GET['bulan'] ?? $default_filter);
+$f_year = (int)substr($filter_bulan, 0, 4);
+if ($f_year < 2026 || $f_year > 2027) {
+    $filter_bulan = $default_filter;
+}
+
 $page = max(1, (int)($_GET['page'] ?? 1));
 $per_page = 12;
 
@@ -64,6 +85,10 @@ $rows = $conn->query("SELECT t.*, k.nama_kategori FROM transaksi t JOIN kategori
 $summary = $conn->query("SELECT COALESCE(SUM(jumlah),0) as total, COUNT(*) as cnt FROM transaksi WHERE $where_simple")->fetch_assoc();
 
 $alert = getAlert();
+
+// Format label tombol filter aktif
+$parts_f = explode('-', $filter_bulan);
+$label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIndoPub($parts_f[1]) . ' ' . $parts_f[0] : 'Pilih Bulan';
 ?>
 
 <!DOCTYPE html>
@@ -72,8 +97,85 @@ $alert = getAlert();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Kas Masuk - <?= APP_NAME ?></title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=1786264272">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=<?= time() ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<!-- FONT MODERN: Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* =======================================================
+   STYLING MODAL POP-UP TYPOGRAPHY MODERN & ESTETIK
+   ======================================================= */
+.modern-modal-overlay {
+  position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px); z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; opacity: 0; visibility: hidden; transition: all 0.3s ease;
+}
+.modern-modal-overlay.active { opacity: 1; visibility: visible; }
+.modern-modal-box {
+  background: #ffffff; border-radius: 16px; width: 100%; max-width: 580px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: scale(0.95) translateY(10px); transition: all 0.3s ease;
+  overflow: hidden; border: none; font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+.modern-modal-overlay.active .modern-modal-box { transform: scale(1) translateY(0); }
+
+.modern-modal-header {
+  padding: 20px 24px; background: #ffffff; 
+  border-bottom: 1px solid #e2e8f0; 
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modern-modal-title { 
+  font-size: 1.1rem; font-weight: 700; color: var(--primary); 
+  display: flex; align-items: center; gap: 10px;
+  letter-spacing: -0.2px;
+}
+.modern-modal-close {
+  width: 32px; height: 32px; background: transparent; border: none;
+  display: flex; align-items: center; justify-content: center; 
+  color: #94a3b8; font-size: 1.25rem; cursor: pointer; transition: 0.2s;
+}
+.modern-modal-close:hover { color: #0f172a; }
+
+.modern-modal-body { padding: 24px; background: #ffffff; }
+
+.modern-modal-body .form-label { 
+    font-size: 0.85rem; font-weight: 600; color: #334155; 
+    margin-bottom: 8px; letter-spacing: -0.1px; 
+}
+.modern-modal-body .form-control { 
+    background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; 
+    padding: 11px 16px 11px 42px; font-size: 0.9rem; font-weight: 500; color: #0f172a;
+    box-shadow: none; transition: 0.2s; font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+.modern-modal-body .form-control::placeholder {
+    color: #94a3b8; font-weight: 400;
+}
+.modern-modal-body .form-control:focus { 
+    background-color: #ffffff; border-color: var(--primary); 
+    box-shadow: 0 0 0 3px rgba(30,110,181,0.15); 
+}
+.modern-modal-body .input-icon { color: #94a3b8; }
+
+.modern-modal-footer {
+    display: flex; justify-content: flex-end; align-items: center; gap: 12px;
+    margin-top: 24px;
+}
+.btn-modal-batal {
+    background: #f1f5f9; color: #475569; font-weight: 600; font-size: 0.875rem;
+    border: none; padding: 11px 24px; border-radius: 8px; cursor: pointer; transition: 0.2s;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+.btn-modal-batal:hover { background: #e2e8f0; color: #0f172a; }
+
+.btn-modal-simpan {
+    background: var(--primary); color: #ffffff; font-weight: 600; font-size: 0.875rem;
+    border: none; padding: 11px 24px; border-radius: 8px; cursor: pointer; transition: 0.2s;
+    display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(30,110,181,0.3);
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+.btn-modal-simpan:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 6px 8px -1px rgba(30,110,181,0.4); }
+</style>
 </head>
 <body>
 <div class="admin-wrapper">
@@ -89,7 +191,35 @@ $alert = getAlert();
       </div>
     </div>
     <div class="topbar-right">
-      <div class="topbar-date"><i class="fas fa-calendar-alt"></i> <?= date('d F Y') ?></div>
+      <div class="topbar-date"><i class="fas fa-calendar-alt me-1" style="margin-right: 4px;"></i> <?= tglIndoKasMasuk(date('Y-m-d')) ?></div>
+      
+      <!-- DROPDOWN PROFIL USER -->
+      <div class="user-dropdown-wrapper" id="userDropdownWrap">
+        <div class="topbar-user" id="userDropdownTrigger">
+          <div class="t-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
+          <div class="t-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+        
+        <div class="user-dropdown-menu">
+          <div class="dropdown-header">
+            <div class="d-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
+            <div class="d-info">
+              <div class="d-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
+              <div class="d-role">@admin</div>
+            </div>
+          </div>
+          <div class="dropdown-body">
+            <a href="profil.php" class="dropdown-item">
+              <i class="fas fa-user-cog"></i> Pengaturan Akun
+            </a>
+            <a href="#" class="dropdown-item text-danger" onclick="openLogoutModal()">
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+          </div>
+        </div>
+      </div>
+      <!-- END DROPDOWN -->
     </div>
   </div>
 
@@ -103,81 +233,16 @@ $alert = getAlert();
     
     <div class="page-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
       <div>
-        <h1 class="page-title"><i class="fas fa-arrow-circle-down" style="color:var(--info)"></i> Kas Masuk</h1>
-        <p class="page-subtitle">Kelola data pemasukan kas <?= MASJID_NAME ?></p>
+        <h1 class="page-title"><i class="fas fa-arrow-circle-up" style="color:var(--info)"></i> Kas Masuk</h1>
+        <p class="page-subtitle" style="color:#0f172a; font-weight:600;">Kelola data pemasukan kas Masjid Baeturrohman</p>
       </div>
-      <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn btn-ghost" style="border:1.5px solid var(--border);background:var(--bg-card)">
-        <i class="fas fa-arrow-left"></i> Kembali
-      </a>
-    </div>
-
-    <!-- Form Tambah/Edit -->
-    <div class="card mb-3 animate-fadeIn">
-      <div class="card-header">
-        <div class="card-title">
-          <i class="fas fa-<?= $edit_data ? 'edit' : 'plus-circle' ?>"></i>
-          <?= $edit_data ? 'Edit Data Kas Masuk' : 'Tambah Kas Masuk' ?>
-        </div>
-        <?php if ($edit_data): ?>
-        <a href="kas-masuk.php" class="btn btn-ghost btn-sm"><i class="fas fa-times"></i> Batal Edit</a>
-        <?php endif; ?>
-      </div>
-      <div class="card-body">
-        <form method="POST" id="formKasMasuk">
-          <?php if ($edit_data): ?>
-          <input type="hidden" name="id" value="<?= $edit_data['id'] ?>">
-          <?php endif; ?>
-          <div class="grid-2 form-kas-grid" style="gap:16px">
-            <div class="form-group mb-0">
-              <label class="form-label">Tanggal <span class="required">*</span></label>
-              <div class="input-group">
-                <i class="fas fa-calendar input-icon"></i>
-                <input type="date" name="tanggal" class="form-control"
-                       value="<?= $edit_data['tanggal'] ?? date('Y-m-d') ?>" required>
-              </div>
-            </div>
-            <div class="form-group mb-0">
-              <label class="form-label">Kategori <span class="required">*</span></label>
-              <div class="input-group">
-                <i class="fas fa-tag input-icon"></i>
-                <select name="kategori_id" class="form-control form-select" required>
-                  <option value="">-- Pilih Kategori --</option>
-                  <?php while ($k = $kategori_list->fetch_assoc()): ?>
-                  <option value="<?= $k['id'] ?>" <?= ($edit_data['kategori_id']??'')==$k['id']?'selected':'' ?>>
-                    <?= htmlspecialchars($k['nama_kategori']) ?>
-                  </option>
-                  <?php endwhile; ?>
-                </select>
-              </div>
-            </div>
-            <div class="form-group mb-0">
-              <label class="form-label">Jumlah (Rp) <span class="required">*</span></label>
-              <div class="input-group">
-                <i class="fas fa-money-bill input-icon"></i>
-                <input type="text" name="jumlah" id="jumlahInput" class="form-control"
-                       placeholder="0" required
-                       value="<?= $edit_data ? number_format($edit_data['jumlah'],0,',','.') : '' ?>">
-              </div>
-            </div>
-            <div class="form-group mb-0">
-              <label class="form-label">Keterangan <span class="required">*</span></label>
-              <div class="input-group">
-                <i class="fas fa-align-left input-icon"></i>
-                <input type="text" name="keterangan" class="form-control"
-                       placeholder="Contoh: Infak Jumat Minggu 1"
-                       value="<?= htmlspecialchars($edit_data['keterangan'] ?? '') ?>" required>
-              </div>
-            </div>
-          </div>
-          <div style="margin-top:20px;display:flex;gap:12px">
-            <button type="submit" class="btn btn-primary">
-              <i class="fas fa-save"></i> <?= $edit_data ? 'Simpan Perubahan' : 'Tambah Data' ?>
-            </button>
-            <?php if (!$edit_data): ?>
-            <button type="reset" class="btn btn-ghost"><i class="fas fa-undo"></i> Reset</button>
-            <?php endif; ?>
-          </div>
-        </form>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button onclick="openTambahModal()" class="btn btn-primary" style="border:none; display:inline-flex; align-items:center; gap:8px;">
+          <i class="fas fa-plus-circle"></i> Tambah Data
+        </button>
+        <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn" style="background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border);">
+          <i class="fas fa-arrow-left"></i> Kembali
+        </a>
       </div>
     </div>
 
@@ -185,27 +250,30 @@ $alert = getAlert();
     <div class="summary-bar" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
       <div style="display:flex;gap:12px;flex-wrap:wrap">
         <div class="summary-bar-item" style="background:var(--bg-card);padding:12px 18px;border-radius:var(--radius);box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:10px;border-left:3px solid var(--success)">
-          <i class="fas fa-arrow-down" style="color:var(--info);font-size:1.1rem"></i>
-          <div><div style="font-size:.7rem;color:var(--text-muted)">Total Bulan Ini</div>
+          <i class="fas fa-arrow-up" style="color:var(--info);font-size:1.1rem"></i>
+          <div><div style="font-size:.7rem;color:#0f172a;font-weight:700;">Total Pemasukan Bulan Ini</div>
           <div style="font-weight:800;color:var(--info);font-size:.95rem"><?= formatRupiah($summary['total']) ?></div></div>
         </div>
         <div class="summary-bar-item" style="background:var(--bg-card);padding:12px 18px;border-radius:var(--radius);box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:10px;border-left:3px solid var(--info)">
           <i class="fas fa-list" style="color:var(--info);font-size:1.1rem"></i>
-          <div><div style="font-size:.7rem;color:var(--text-muted)">Jumlah Transaksi</div>
+          <div><div style="font-size:.7rem;color:#0f172a;font-weight:700;">Jumlah Transaksi Bulan Ini</div>
           <div style="font-weight:800;color:var(--info);font-size:.95rem"><?= $summary['cnt'] ?> transaksi</div></div>
         </div>
       </div>
-      <form method="GET" style="display:flex;align-items:center;gap:8px">
-        <label style="font-size:.82rem;font-weight:600;color:var(--text-secondary);white-space:nowrap"><i class="fas fa-filter"></i> Bulan:</label>
-        <input type="month" name="bulan" value="<?= $filter_bulan ?>" class="form-control" style="width:150px" onchange="this.form.submit()">
-      </form>
+      
+      <!-- Tombol Pemicu Pop-up Filter -->
+      <div>
+        <button type="button" onclick="openFilterModal()" class="btn" style="background:#ffffff; color:#0f172a; border:1px solid #cbd5e1; font-weight:700; display:inline-flex; align-items:center; gap:8px; padding:9px 16px; border-radius:10px; box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+          <i class="fas fa-calendar-alt" style="color:var(--primary);"></i> <?= $label_filter_aktif ?> <i class="fas fa-chevron-down" style="font-size:0.75rem; color:#94a3b8; margin-left:4px;"></i>
+        </button>
+      </div>
     </div>
 
     <!-- Tabel (Desktop) -->
     <div class="table-wrapper animate-fadeIn table-wrapper-desktop">
       <table class="table table-striped">
         <thead>
-          <tr><th>#</th><th>Tanggal</th><th>Keterangan</th><th>Kategori</th><th class="text-right">Jumlah (Rp)</th><th style="width:90px">Aksi</th></tr>
+          <tr><th>No</th><th>Tanggal</th><th>Keterangan</th><th>Kategori</th><th class="text-right">Jumlah (Rp)</th><th style="width:90px">Aksi</th></tr>
         </thead>
         <tbody>
           <?php
@@ -217,15 +285,15 @@ $alert = getAlert();
           ?>
           <tr>
             <td class="text-muted"><?= $no++ ?></td>
-            <td style="white-space:nowrap"><?= date('d M Y', strtotime($r['tanggal'])) ?></td>
+            <td style="white-space:nowrap"><?= tglIndoKasMasuk($r['tanggal']) ?></td>
             <td><?= htmlspecialchars($r['keterangan']) ?></td>
             <td><span class="badge badge-success"><?= htmlspecialchars($r['nama_kategori']) ?></span></td>
             <td class="text-right fw-600 text-success">+ <?= number_format($r['jumlah'],0,',','.') ?></td>
             <td>
               <div style="display:flex;gap:6px">
-                <a href="?edit=<?= $r['id'] ?>&bulan=<?= $filter_bulan ?>" class="btn btn-ghost btn-icon btn-sm" data-tooltip="Edit"><i class="fas fa-edit"></i></a>
+                <button onclick="openEditModal(<?= $r['id'] ?>, '<?= $r['tanggal'] ?>', '<?= $r['kategori_id'] ?>', '<?= $r['jumlah'] ?>', '<?= htmlspecialchars(addslashes($r['keterangan'])) ?>')" class="btn btn-ghost btn-icon btn-sm" title="Edit"><i class="fas fa-edit"></i></button>
                 <button onclick="confirmDelete(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['keterangan'])) ?>')"
-                        class="btn btn-icon btn-sm" style="background:rgba(239,68,68,.1);color:var(--danger)" data-tooltip="Hapus">
+                        class="btn btn-icon btn-sm" style="background:rgba(239,68,68,.1);color:var(--danger)" title="Hapus">
                   <i class="fas fa-trash"></i>
                 </button>
               </div>
@@ -233,7 +301,7 @@ $alert = getAlert();
           </tr>
           <?php endwhile;
           else: ?>
-          <tr><td colspan="6"><div class="empty-state"><div class="es-icon"><i class="fas fa-inbox"></i></div><h3>Belum ada data kas masuk</h3><p>Tambahkan data menggunakan form di atas</p></div></td></tr>
+          <tr><td colspan="6"><div class="empty-state"><div class="es-icon"><i class="fas fa-inbox"></i></div><h3>Belum ada data kas masuk</h3><p>Klik tombol "Tambah Data" di atas untuk menambahkan data baru.</p></div></td></tr>
           <?php endif; ?>
         </tbody>
         <?php if (!empty($rows_data)): ?>
@@ -249,19 +317,19 @@ $alert = getAlert();
       <?php if (!empty($rows_data)): foreach ($rows_data as $r): ?>
       <div class="trx-m-item">
         <div class="trx-m-icon" style="background:rgba(59,130,246,.1);color:var(--info)">
-          <i class="fas fa-arrow-down"></i>
+          <i class="fas fa-arrow-up"></i>
         </div>
         <div class="trx-m-body">
           <div class="trx-m-name"><?= htmlspecialchars($r['keterangan']) ?></div>
           <div class="trx-m-meta">
-            <span><i class="fas fa-calendar-alt"></i> <?= date('d M Y', strtotime($r['tanggal'])) ?></span>
+            <span><i class="fas fa-calendar-alt"></i> <?= tglIndoKasMasuk($r['tanggal']) ?></span>
             <span class="badge badge-success" style="font-size:.65rem;padding:2px 7px"><?= htmlspecialchars($r['nama_kategori']) ?></span>
           </div>
         </div>
         <div class="trx-m-right">
           <div class="trx-m-amount text-success">+Rp <?= number_format($r['jumlah'],0,',','.') ?></div>
           <div class="trx-m-actions">
-            <a href="?edit=<?= $r['id'] ?>&bulan=<?= $filter_bulan ?>" class="btn btn-ghost btn-icon btn-sm"><i class="fas fa-edit"></i></a>
+            <button onclick="openEditModal(<?= $r['id'] ?>, '<?= $r['tanggal'] ?>', '<?= $r['kategori_id'] ?>', '<?= $r['jumlah'] ?>', '<?= htmlspecialchars(addslashes($r['keterangan'])) ?>')" class="btn btn-ghost btn-icon btn-sm"><i class="fas fa-edit"></i></button>
             <button onclick="confirmDelete(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['keterangan'])) ?>')"
                     class="btn btn-icon btn-sm" style="background:rgba(239,68,68,.1);color:var(--danger)">
               <i class="fas fa-trash"></i>
@@ -289,7 +357,196 @@ $alert = getAlert();
 </div>
 </div>
 
-<!-- Confirm Delete Modal (Dengan Opsi Tempat Sampah) -->
+<!-- ========================================================= -->
+<!-- MODAL POP-UP TAMBAH DATA -->
+<!-- ========================================================= -->
+<div class="modern-modal-overlay" id="tambahModal">
+  <div class="modern-modal-box">
+    <div class="modern-modal-header">
+      <div class="modern-modal-title">
+        <i class="fas fa-plus-circle"></i> Tambah Kas Masuk Baru
+      </div>
+      <button class="modern-modal-close" onclick="closeTambahModal()"><i class="fas fa-times"></i></button>
+    </div>
+    
+    <div class="modern-modal-body">
+      <form method="POST">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div class="form-group mb-0">
+            <label class="form-label">Tanggal <span class="required">*</span></label>
+            <div class="input-group">
+              <i class="fas fa-calendar input-icon"></i>
+              <input type="date" name="tanggal" class="form-control" value="<?= date('Y-m-d') ?>" required>
+            </div>
+          </div>
+          <div class="form-group mb-0">
+            <label class="form-label">Kategori <span class="required">*</span></label>
+            <div class="input-group">
+              <i class="fas fa-tag input-icon"></i>
+              <select name="kategori_id" class="form-control form-select" required>
+                <?php 
+                $kategori_list->data_seek(0);
+                while ($k = $kategori_list->fetch_assoc()): 
+                ?>
+                <option value="<?= $k['id'] ?>"><?= htmlspecialchars($k['nama_kategori']) ?></option>
+                <?php endwhile; ?>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:10px;">
+          <div class="form-group mb-0">
+            <label class="form-label">Jumlah (Rp) <span class="required">*</span></label>
+            <div class="input-group">
+              <i class="fas fa-money-bill input-icon"></i>
+              <input type="text" name="jumlah" id="jumlahInputModal" class="form-control" placeholder="0" required>
+            </div>
+          </div>
+          <div class="form-group mb-0">
+            <label class="form-label">Keterangan <span class="required">*</span></label>
+            <div class="input-group">
+              <i class="fas fa-align-left input-icon"></i>
+              <input type="text" name="keterangan" class="form-control" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="modern-modal-footer">
+          <button type="button" class="btn-modal-batal" onclick="closeTambahModal()">Batal</button>
+          <button type="submit" class="btn-modal-simpan">
+            <i class="fas fa-save"></i> Simpan Data
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================= -->
+<!-- MODAL POP-UP EDIT DATA -->
+<!-- ========================================================= -->
+<div class="modern-modal-overlay" id="editModal">
+  <div class="modern-modal-box">
+    <div class="modern-modal-header">
+      <div class="modern-modal-title" style="color: var(--primary);">
+        <i class="fas fa-edit"></i> Edit Data Kas Masuk
+      </div>
+      <button class="modern-modal-close" onclick="closeEditModal()"><i class="fas fa-times"></i></button>
+    </div>
+    
+    <div class="modern-modal-body">
+      <form method="POST">
+        <input type="hidden" name="id" id="editIdField">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div class="form-group mb-0">
+            <label class="form-label">Tanggal <span class="required">*</span></label>
+            <div class="input-group">
+              <i class="fas fa-calendar input-icon"></i>
+              <input type="date" name="tanggal" id="editTanggalField" class="form-control" required>
+            </div>
+          </div>
+          <div class="form-group mb-0">
+            <label class="form-label">Kategori <span class="required">*</span></label>
+            <div class="input-group">
+              <i class="fas fa-tag input-icon"></i>
+              <select name="kategori_id" id="editKategoriField" class="form-control form-select" required>
+                <?php 
+                $kategori_list->data_seek(0);
+                while ($k = $kategori_list->fetch_assoc()): 
+                ?>
+                <option value="<?= $k['id'] ?>"><?= htmlspecialchars($k['nama_kategori']) ?></option>
+                <?php endwhile; ?>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:10px;">
+          <div class="form-group mb-0">
+            <label class="form-label">Jumlah (Rp) <span class="required">*</span></label>
+            <div class="input-group">
+              <i class="fas fa-money-bill input-icon"></i>
+              <input type="text" name="jumlah" id="jumlahInputEditModal" class="form-control" placeholder="0" required>
+            </div>
+          </div>
+          <div class="form-group mb-0">
+            <label class="form-label">Keterangan <span class="required">*</span></label>
+            <div class="input-group">
+              <i class="fas fa-align-left input-icon"></i>
+              <input type="text" name="keterangan" id="editKeteranganField" class="form-control" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="modern-modal-footer">
+          <button type="button" class="btn-modal-batal" onclick="closeEditModal()">Batal</button>
+          <button type="submit" class="btn-modal-simpan">
+            <i class="fas fa-save"></i> Simpan Perubahan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================= -->
+<!-- MODAL POP-UP FILTER BULAN & TAHUN (TAHUN 2026 - 2027) -->
+<!-- ========================================================= -->
+<div class="modern-modal-overlay" id="filterModal">
+  <div class="modern-modal-box" style="max-width: 400px;">
+    <div class="modern-modal-header">
+      <div class="modern-modal-title">
+        <i class="fas fa-filter"></i> Pilih Periode Bulan
+      </div>
+      <button class="modern-modal-close" onclick="closeFilterModal()"><i class="fas fa-times"></i></button>
+    </div>
+    
+    <div class="modern-modal-body">
+      <form method="GET" id="formFilterModal">
+        <?php 
+        $curr_f_y = (int)substr($filter_bulan, 0, 4);
+        $curr_f_m = (int)substr($filter_bulan, 5, 2);
+        if ($curr_f_y < 2026 || $curr_f_y > 2027) {
+            $curr_f_y = 2026;
+        }
+        $list_Bulan_Modal = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+        ?>
+        <div class="form-group mb-3" style="margin-bottom:16px;">
+          <label class="form-label">Bulan</label>
+          <select name="filter_m" id="modalSelectBulan" class="form-control form-select" style="background:#f8fafc;">
+            <?php foreach($list_Bulan_Modal as $m_num => $m_name): ?>
+                <option value="<?= sprintf('%02d', $m_num) ?>" <?= $curr_f_m == $m_num ? 'selected' : '' ?>><?= $m_name ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <div class="form-group mb-3" style="margin-bottom:20px;">
+          <label class="form-label">Tahun</label>
+          <select name="filter_y" id="modalSelectTahun" class="form-control form-select" style="background:#f8fafc;">
+            <option value="2026" <?= $curr_f_y == 2026 ? 'selected' : '' ?>>2026</option>
+            <option value="2027" <?= $curr_f_y == 2027 ? 'selected' : '' ?>>2027</option>
+          </select>
+        </div>
+
+        <input type="hidden" name="bulan" id="hiddenFinalBulan" value="<?= $filter_bulan ?>">
+
+        <div class="modern-modal-footer">
+          <button type="button" class="btn-modal-batal" onclick="closeFilterModal()">Batal</button>
+          <button type="button" onclick="submitFilterModal()" class="btn-modal-simpan">
+            <i class="fas fa-check"></i> Tampilkan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete Modal -->
 <div class="modal-overlay" id="deleteModal">
   <div class="modal">
     <div class="modal-header">
@@ -312,13 +569,79 @@ $alert = getAlert();
 </div>
 
 <script>
-// Format currency input
-document.getElementById('jumlahInput').addEventListener('input', function() {
-  let val = this.value.replace(/\D/g,'');
-  this.value = val ? new Intl.NumberFormat('id-ID').format(val) : '';
+// Logic Dropdown User Topbar
+const userDropdownWrap = document.getElementById('userDropdownWrap');
+const userDropdownTrigger = document.getElementById('userDropdownTrigger');
+
+if (userDropdownTrigger && userDropdownWrap) {
+    userDropdownTrigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        userDropdownWrap.classList.toggle('active');
+    });
+    
+    document.addEventListener('click', function(e) {
+        if (!userDropdownWrap.contains(e.target)) {
+            userDropdownWrap.classList.remove('active');
+        }
+    });
+}
+
+// Logic Pop-up Tambah Data
+function openTambahModal() {
+  document.getElementById('tambahModal').classList.add('active');
+}
+function closeTambahModal() {
+  document.getElementById('tambahModal').classList.remove('active');
+}
+document.getElementById('tambahModal').addEventListener('click', function(e) {
+  if (e.target === this) closeTambahModal();
 });
 
-// Modal Logic
+// Logic Pop-up Edit Data
+function openEditModal(id, tanggal, kategoriId, jumlah, keterangan) {
+  document.getElementById('editIdField').value = id;
+  document.getElementById('editTanggalField').value = tanggal;
+  document.getElementById('editKategoriField').value = kategoriId;
+  document.getElementById('jumlahInputEditModal').value = new Intl.NumberFormat('id-ID').format(jumlah);
+  document.getElementById('editKeteranganField').value = keterangan;
+  document.getElementById('editModal').classList.add('active');
+}
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('active');
+}
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
+
+// Logic Pop-up Filter Bulan
+function openFilterModal() {
+  document.getElementById('filterModal').classList.add('active');
+}
+function closeFilterModal() {
+  document.getElementById('filterModal').classList.remove('active');
+}
+document.getElementById('filterModal').addEventListener('click', function(e) {
+  if (e.target === this) closeFilterModal();
+});
+function submitFilterModal() {
+  let m = document.getElementById('modalSelectBulan').value;
+  let y = document.getElementById('modalSelectTahun').value;
+  document.getElementById('hiddenFinalBulan').value = y + '-' + m;
+  document.getElementById('formFilterModal').submit();
+}
+
+// Format currency input untuk Modal dan Edit Modal
+const formatRupiahInput = function(el) {
+  if(!el) return;
+  el.addEventListener('input', function() {
+    let val = this.value.replace(/\D/g,'');
+    this.value = val ? new Intl.NumberFormat('id-ID').format(val) : '';
+  });
+};
+formatRupiahInput(document.getElementById('jumlahInputModal'));
+formatRupiahInput(document.getElementById('jumlahInputEditModal'));
+
+// Modal Delete Logic
 function confirmDelete(id, name) {
   document.getElementById('deleteItemName').textContent = name;
   document.getElementById('deleteSoftBtn').href = '?delete=' + id + '&type=soft';

@@ -184,6 +184,25 @@ function initTableSearch() {
   });
 }
 
+/* ===== 12. USER DROPDOWN ===== */
+function initUserDropdown() {
+    const userDropdownWrap = document.getElementById('userDropdownWrap');
+    const userDropdownTrigger = document.getElementById('userDropdownTrigger');
+
+    if (userDropdownTrigger && userDropdownWrap) {
+        userDropdownTrigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            userDropdownWrap.classList.toggle('active');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!userDropdownWrap.contains(e.target)) {
+                userDropdownWrap.classList.remove('active');
+            }
+        });
+    }
+}
+
 /* ===== INIT ===== */
 document.addEventListener('DOMContentLoaded', () => {
   initScrollAnimations();
@@ -195,6 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initRipple();
   initChartDefaults();
   initTableSearch();
+  initUserDropdown();
 
   // Stagger delay untuk stat cards
   document.querySelectorAll('.stat-card, .saldo-card').forEach((el, i) => {

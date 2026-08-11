@@ -419,9 +419,9 @@ $alert = getAlert();
     </div>
 
     <!-- KEMBALI -->
-    <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn btn-ghost w-100" style="justify-content:center;height:48px;margin-bottom:30px;">
-      <i class="fas fa-arrow-left"></i> Kembali
-    </a>
+    <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn" style="background:var(--primary);color:#fff;border:none;">
+        <i class="fas fa-arrow-left"></i> Kembali
+      </a>
 
   </div>
 </div>

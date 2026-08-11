@@ -6,7 +6,6 @@ $admin_init = strtoupper(substr($admin_name, 0, 1));
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 <aside class="sidebar" id="adminSidebar">
   <div class="sidebar-header">
-    <!-- Icon Masjid Diubah ke Style Kotak Kuning/Emas -->
     <div class="sidebar-logo" style="background-color: #d4af37; width: 45px; height: 45px; border-radius: 12px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);">
       <i class="fas fa-mosque" style="color: #ffffff; font-size: 22px;"></i>
     </div>
@@ -25,11 +24,11 @@ $admin_init = strtoupper(substr($admin_name, 0, 1));
 
     <a href="<?= APP_URL ?>/admin/kas-masuk.php"
        class="nav-item <?= $current=='kas-masuk.php'?'active':'' ?>">
-      <span class="nav-icon"><i class="fas fa-arrow-circle-down"></i></span> Kas Masuk
+      <span class="nav-icon"><i class="fas fa-arrow-circle-up"></i></span> Kas Masuk
     </a>
     <a href="<?= APP_URL ?>/admin/kas-keluar.php"
        class="nav-item <?= $current=='kas-keluar.php'?'active':'' ?>">
-      <span class="nav-icon"><i class="fas fa-arrow-circle-up"></i></span> Kas Keluar
+      <span class="nav-icon"><i class="fas fa-arrow-circle-down"></i></span> Kas Keluar
     </a>
 
     <a href="<?= APP_URL ?>/admin/laporan.php"
@@ -45,7 +44,6 @@ $admin_init = strtoupper(substr($admin_name, 0, 1));
     $jml_sampah = 0;
     try {
         if (isset($conn) && $conn) {
-            // Cek dulu apakah kolom deleted_at sudah ada
             $cek_kolom = $conn->query("SHOW COLUMNS FROM transaksi LIKE 'deleted_at'");
             if ($cek_kolom && $cek_kolom->num_rows > 0) {
                 $res = $conn->query("SELECT COUNT(*) as c FROM transaksi WHERE deleted_at IS NOT NULL");
@@ -57,16 +55,6 @@ $admin_init = strtoupper(substr($admin_name, 0, 1));
     }
     ?>
 
-    <a href="<?= APP_URL ?>/admin/profil.php"
-       class="nav-item <?= $current=='profil.php'?'active':'' ?>">
-      <span class="nav-icon"><i class="fas fa-user-circle"></i></span> Profil
-    </a>
-    <a href="<?= APP_URL ?>/admin/ubah-password.php"
-       class="nav-item <?= $current=='ubah-password.php'?'active':'' ?>">
-      <span class="nav-icon"><i class="fas fa-shield-alt"></i></span> Keamanan
-    </a>
-    
-    <!-- Perbaikan icon Riwayat ditambahkan class nav-icon agar sejajar -->
     <a href="<?= APP_URL ?>/admin/tempat-sampah.php"
        class="nav-item <?= $current=='tempat-sampah.php'?'active':'' ?>">
       <span class="nav-icon"><i class="fas fa-history"></i></span> Riwayat
@@ -81,20 +69,6 @@ $admin_init = strtoupper(substr($admin_name, 0, 1));
     </a>
 
   </nav>
-
-  <div class="sidebar-footer">
-    <div class="sidebar-user" onclick="openLogoutModal()" style="cursor:pointer">
-      <div class="user-avatar"><?= $admin_init ?></div>
-      <div style="flex:1;overflow:hidden">
-        <div style="font-size:.85rem;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-          <?= htmlspecialchars($admin_name) ?>
-        </div>
-        <div style="font-size:.72rem;color:rgba(255,255,255,.5)">
-          <i class="fas fa-sign-out-alt"></i> Logout
-        </div>
-      </div>
-    </div>
-  </div>
 </aside>
 
 <!-- Modal Konfirmasi Logout -->
@@ -113,18 +87,18 @@ $admin_init = strtoupper(substr($admin_name, 0, 1));
       <div style="width:68px;height:68px;background:rgba(239,68,68,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:var(--danger);margin:0 auto 16px">
         <i class="fas fa-sign-out-alt"></i>
       </div>
-      <h3 style="font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:8px">
+      <h3 style="font-size:1rem;font-weight:700;color:#1e293b;margin-bottom:8px">
         Yakin ingin keluar?
       </h3>
-      <p style="font-size:.85rem;color:var(--text-muted);line-height:1.6">
+      <p style="font-size:.85rem;color:#64748b;line-height:1.6">
         Anda akan keluar dari sesi admin.<br>Pastikan semua data sudah tersimpan.
       </p>
     </div>
-    <div class="modal-footer" style="justify-content:center;gap:12px;padding-bottom:24px">
-      <button class="btn btn-ghost" onclick="closeLogoutModal()" style="min-width:110px;justify-content:center">
+    <div class="modal-footer" style="justify-content:center;gap:12px;padding-bottom:24px;border:none;">
+      <button class="btn btn-ghost" onclick="closeLogoutModal()" style="min-width:110px;justify-content:center;background:#f1f5f9;color:#64748b;border:none;">
         <i class="fas fa-times"></i> Batal
       </button>
-      <a href="<?= APP_URL ?>/logout.php" class="btn btn-danger" style="min-width:110px;justify-content:center">
+      <a href="<?= APP_URL ?>/logout.php" class="btn btn-danger" style="min-width:110px;justify-content:center;background:#ef4444;color:#fff;border:none;padding:10px 15px;border-radius:8px;">
         <i class="fas fa-sign-out-alt"></i> Ya, Logout
       </a>
     </div>

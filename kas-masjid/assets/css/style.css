@@ -666,3 +666,39 @@ body.dark-mode .navbar {
   background-color: #1e293b !important;
   border-bottom: 1px solid #334155 !important;
 }
+
+/* ===== DROPDOWN PROFIL MODERN ===== */
+.user-dropdown-wrapper { position: relative; }
+.topbar-user { 
+    cursor: pointer; padding: 5px 10px; border-radius: 8px; transition: background 0.2s; 
+    display: flex; align-items: center; gap: 10px; 
+}
+.topbar-user:hover { background: rgba(0,0,0,0.04); }
+.t-avatar { width: 32px; height: 32px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; }
+.t-name { font-weight: 600; font-size: 0.9rem; color: var(--text-primary); }
+.topbar-user i.fa-chevron-down { font-size: 0.7rem; color: var(--text-muted); transition: transform 0.3s; }
+.user-dropdown-wrapper.active .topbar-user i.fa-chevron-down { transform: rotate(180deg); }
+
+.user-dropdown-menu {
+  position: absolute; top: calc(100% + 15px); right: 0; background: var(--bg-card);
+  border: 1px solid var(--border-light); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  width: 250px; opacity: 0; visibility: hidden; transform: translateY(-10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000;
+}
+.user-dropdown-wrapper.active .user-dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+
+.dropdown-header { padding: 18px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid var(--border-light); background: var(--bg-main); border-radius: 16px 16px 0 0; }
+.d-avatar { width: 45px; height: 45px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; }
+.d-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+.d-name { font-weight: 700; color: var(--text-primary); font-size: 1rem; line-height: 1.2; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.d-role { font-size: 0.8rem; color: var(--text-muted); line-height: 1;}
+
+.dropdown-body { padding: 10px 0; }
+.dropdown-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: var(--text-primary); font-size: 0.9rem; font-weight: 600; transition: all 0.2s ease; text-decoration: none; }
+.dropdown-item i { font-size: 1.1rem; color: var(--text-muted); width: 20px; text-align: center; transition: 0.2s; }
+.dropdown-item:hover { background: var(--bg-main); color: var(--primary); padding-left: 25px; }
+.dropdown-item:hover i { color: var(--primary); }
+
+.dropdown-item.text-danger { color: var(--danger); }
+.dropdown-item.text-danger i { color: var(--danger); }
+.dropdown-item.text-danger:hover { background: rgba(239,68,68,.08); color: var(--danger); padding-left: 25px; }
