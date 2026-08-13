@@ -103,17 +103,18 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* =======================================================
-   STYLING MODAL POP-UP TYPOGRAPHY MODERN & ESTETIK
+   STYLING MODAL & MOBILE RESPONSIVE PERBAIKAN
    ======================================================= */
 .modern-modal-overlay {
   position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(4px); z-index: 9999;
   display: flex; align-items: center; justify-content: center;
-  padding: 20px; opacity: 0; visibility: hidden; transition: all 0.3s ease;
+  padding: 15px; opacity: 0; visibility: hidden; transition: all 0.3s ease;
 }
 .modern-modal-overlay.active { opacity: 1; visibility: visible; }
 .modern-modal-box {
   background: #ffffff; border-radius: 16px; width: 100%; max-width: 580px;
+  max-height: 90vh; display: flex; flex-direction: column;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   transform: scale(0.95) translateY(10px); transition: all 0.3s ease;
   overflow: hidden; border: none; font-family: 'Plus Jakarta Sans', sans-serif !important;
@@ -121,8 +122,8 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
 .modern-modal-overlay.active .modern-modal-box { transform: scale(1) translateY(0); }
 
 .modern-modal-header {
-  padding: 20px 24px; background: #ffffff; 
-  border-bottom: 1px solid #e2e8f0; 
+  padding: 18px 24px; background: #ffffff; 
+  border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
   display: flex; align-items: center; justify-content: space-between;
 }
 .modern-modal-title { 
@@ -137,7 +138,9 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
 }
 .modern-modal-close:hover { color: #0f172a; }
 
-.modern-modal-body { padding: 24px; background: #ffffff; }
+.modern-modal-body { 
+  padding: 24px; background: #ffffff; overflow-y: auto; flex: 1; 
+}
 
 .modern-modal-body .form-label { 
     font-size: 0.85rem; font-weight: 600; color: #334155; 
@@ -147,6 +150,7 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
     background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; 
     padding: 11px 16px 11px 42px; font-size: 0.9rem; font-weight: 500; color: #0f172a;
     box-shadow: none; transition: 0.2s; font-family: 'Plus Jakarta Sans', sans-serif !important;
+    width: 100%;
 }
 .modern-modal-body .form-control::placeholder {
     color: #94a3b8; font-weight: 400;
@@ -157,16 +161,17 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
 }
 .modern-modal-body .input-icon { color: #94a3b8; }
 
+/* TOMBOL BATAL DI KIRI & AKSI DI KANAN */
 .modern-modal-footer {
-    display: flex; justify-content: flex-end; align-items: center; gap: 12px;
-    margin-top: 24px;
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9; flex-shrink: 0;
 }
 .btn-modal-batal {
-    background: #f1f5f9; color: #475569; font-weight: 600; font-size: 0.875rem;
+    background: #e2e8f0; color: #334155; font-weight: 600; font-size: 0.875rem;
     border: none; padding: 11px 24px; border-radius: 8px; cursor: pointer; transition: 0.2s;
     font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
-.btn-modal-batal:hover { background: #e2e8f0; color: #0f172a; }
+.btn-modal-batal:hover { background: #cbd5e1; color: #0f172a; }
 
 .btn-modal-simpan {
     background: var(--primary); color: #ffffff; font-weight: 600; font-size: 0.875rem;
@@ -175,6 +180,144 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
     font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
 .btn-modal-simpan:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 6px 8px -1px rgba(30,110,181,0.4); }
+
+.modal-grid-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;
+}
+
+.page-header-flex {
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  flex-wrap: wrap; 
+  gap: 12px;
+}
+
+.summary-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.summary-cards-wrapper {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.summary-bar-item {
+  background: var(--bg-card);
+  padding: 12px 18px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  gap: 12px;
+}
+
+@media(max-width: 640px) {
+  .page-header-flex {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+  .page-header-flex .btn-primary {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .summary-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  .summary-cards-wrapper {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+  .summary-cards-wrapper > div {
+    width: 100% !important;
+  }
+  .summary-container > div:last-child {
+    width: 100% !important;
+  }
+  .summary-container > div:last-child button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  
+  .modal-grid-row {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    margin-bottom: 12px !important;
+  }
+  .modern-modal-box {
+    max-width: 100% !important;
+    max-height: 95vh !important;
+    margin: 10px;
+  }
+  .modern-modal-body {
+    padding: 16px !important;
+  }
+  
+  /* Perbaikan Card List Mobile */
+  .trx-m-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    position: relative !important;
+    padding: 14px !important;
+    gap: 10px !important;
+  }
+  .trx-m-item .trx-m-icon {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+  }
+  .trx-m-item .trx-m-body {
+    padding-left: 42px !important;
+    width: 100% !important;
+  }
+  .trx-m-item .trx-m-right {
+    display: flex !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 10px;
+    margin-top: 4px;
+  }
+
+  /* Perbaikan Modal Hapus di HP agar tidak meluber */
+  #deleteModal .modal {
+    width: 92% !important;
+    max-width: 100% !important;
+    margin: auto;
+    padding: 16px !important;
+  }
+  #deleteModal .modal-footer {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  #deleteModal .modal-footer > div {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  #deleteModal .modal-footer .btn,
+  #deleteModal .modal-footer a {
+    width: 100% !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -231,31 +374,26 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
     </div>
     <?php endif; ?>
     
-    <div class="page-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-      <div>
-        <h1 class="page-title"><i class="fas fa-arrow-circle-up" style="color:var(--info)"></i> Kas Masuk</h1>
-        <p class="page-subtitle" style="color:#0f172a; font-weight:600;">Kelola data pemasukan kas Masjid Baeturrohman</p>
-      </div>
-      <div style="display:flex; gap:10px; align-items:center;">
-        <button onclick="openTambahModal()" class="btn btn-primary" style="border:none; display:inline-flex; align-items:center; gap:8px;">
-          <i class="fas fa-plus-circle"></i> Tambah Data
-        </button>
-        <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn" style="background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border);">
-          <i class="fas fa-arrow-left"></i> Kembali
-        </a>
+    <div class="page-header">
+      <div class="page-header-flex">
+                <div>
+          <button onclick="openTambahModal()" class="btn btn-primary" style="border:none; display:inline-flex; align-items:center; gap:8px;">
+            <i class="fas fa-plus-circle"></i> Tambah Data
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Summary & Filter -->
-    <div class="summary-bar" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
-      <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <div class="summary-bar-item" style="background:var(--bg-card);padding:12px 18px;border-radius:var(--radius);box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:10px;border-left:3px solid var(--success)">
-          <i class="fas fa-arrow-up" style="color:var(--info);font-size:1.1rem"></i>
+    <div class="summary-container">
+      <div class="summary-cards-wrapper">
+        <div class="summary-bar-item" style="border-left:3px solid var(--success)">
+          <i class="fas fa-arrow-up" style="color:var(--info);font-size:1.3rem"></i>
           <div><div style="font-size:.7rem;color:#0f172a;font-weight:700;">Total Pemasukan Bulan Ini</div>
           <div style="font-weight:800;color:var(--info);font-size:.95rem"><?= formatRupiah($summary['total']) ?></div></div>
         </div>
-        <div class="summary-bar-item" style="background:var(--bg-card);padding:12px 18px;border-radius:var(--radius);box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:10px;border-left:3px solid var(--info)">
-          <i class="fas fa-list" style="color:var(--info);font-size:1.1rem"></i>
+        <div class="summary-bar-item" style="border-left:3px solid var(--info)">
+          <i class="fas fa-list" style="color:var(--info);font-size:1.3rem"></i>
           <div><div style="font-size:.7rem;color:#0f172a;font-weight:700;">Jumlah Transaksi Bulan Ini</div>
           <div style="font-weight:800;color:var(--info);font-size:.95rem"><?= $summary['cnt'] ?> transaksi</div></div>
         </div>
@@ -328,7 +466,7 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
         </div>
         <div class="trx-m-right">
           <div class="trx-m-amount text-success">+Rp <?= number_format($r['jumlah'],0,',','.') ?></div>
-          <div class="trx-m-actions">
+          <div class="trx-m-actions" style="display:flex;gap:6px;">
             <button onclick="openEditModal(<?= $r['id'] ?>, '<?= $r['tanggal'] ?>', '<?= $r['kategori_id'] ?>', '<?= $r['jumlah'] ?>', '<?= htmlspecialchars(addslashes($r['keterangan'])) ?>')" class="btn btn-ghost btn-icon btn-sm"><i class="fas fa-edit"></i></button>
             <button onclick="confirmDelete(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['keterangan'])) ?>')"
                     class="btn btn-icon btn-sm" style="background:rgba(239,68,68,.1);color:var(--danger)">
@@ -371,7 +509,7 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
     
     <div class="modern-modal-body">
       <form method="POST">
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
+        <div class="modal-grid-row">
           <div class="form-group mb-0">
             <label class="form-label">Tanggal <span class="required">*</span></label>
             <div class="input-group">
@@ -395,7 +533,7 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:10px;">
+        <div class="modal-grid-row" style="margin-bottom:0 !important;">
           <div class="form-group mb-0">
             <label class="form-label">Jumlah (Rp) <span class="required">*</span></label>
             <div class="input-group">
@@ -438,7 +576,7 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
     <div class="modern-modal-body">
       <form method="POST">
         <input type="hidden" name="id" id="editIdField">
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
+        <div class="modal-grid-row">
           <div class="form-group mb-0">
             <label class="form-label">Tanggal <span class="required">*</span></label>
             <div class="input-group">
@@ -462,7 +600,7 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:10px;">
+        <div class="modal-grid-row" style="margin-bottom:0 !important;">
           <div class="form-group mb-0">
             <label class="form-label">Jumlah (Rp) <span class="required">*</span></label>
             <div class="input-group">
@@ -491,7 +629,7 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
 </div>
 
 <!-- ========================================================= -->
-<!-- MODAL POP-UP FILTER BULAN & TAHUN (TAHUN 2026 - 2027) -->
+<!-- MODAL POP-UP FILTER BULAN & TAHUN -->
 <!-- ========================================================= -->
 <div class="modern-modal-overlay" id="filterModal">
   <div class="modern-modal-box" style="max-width: 400px;">
@@ -556,7 +694,6 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
     <div class="modal-body">
       <p>Apakah Anda yakin ingin menghapus data:</p>
       <div style="background:var(--bg-main);padding:14px;border-radius:var(--radius-sm);margin-top:10px;font-weight:600" id="deleteItemName"></div>
-      <p style="color:var(--danger);font-size:.875rem;margin-top:12px"><i class="fas fa-info-circle"></i> Silakan pilih metode penghapusan di bawah ini.</p>
     </div>
     <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
       <button class="btn btn-ghost" onclick="closeModal()">Batal</button>

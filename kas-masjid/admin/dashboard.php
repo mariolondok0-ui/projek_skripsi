@@ -11,7 +11,7 @@ function tgl_indo($tanggal){
     return $pecahkan[2] . ' ' . $bulan[ (int)$pecahkan[1] ] . ' ' . $pecahkan[0];
 }
 
-// Stat cards
+// Stat cards[cite: 2, 3]
 $total_masuk  = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='masuk' AND deleted_at IS NULL")->fetch_assoc()['t'];
 $total_keluar = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='keluar' AND deleted_at IS NULL")->fetch_assoc()['t'];
 $saldo        = $total_masuk - $total_keluar;
@@ -22,20 +22,20 @@ $masuk_bln    = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM tr
 $keluar_bln   = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='keluar' AND deleted_at IS NULL AND DATE_FORMAT(tanggal,'%Y-%m')='$bln'")->fetch_assoc()['t'];
 $trx_bln      = (int)$conn->query("SELECT COUNT(*) as t FROM transaksi WHERE deleted_at IS NULL AND DATE_FORMAT(tanggal,'%Y-%m')='$bln'")->fetch_assoc()['t'];
 
-// Bar chart 6 bulan
+// Bar chart 6 bulan[cite: 2, 3]
 $chart_labels = $chart_masuk = $chart_keluar = [];
 $nama_bulan_singkat = [1=>'Jan', 2=>'Feb', 3=>'Mar', 4=>'Apr', 5=>'Mei', 6=>'Jun', 7=>'Jul', 8=>'Agt', 9=>'Sep', 10=>'Okt', 11=>'Nov', 12=>'Des'];
 
 for ($i = 5; $i >= 0; $i--) {
     $b = date('Y-m', strtotime("-$i month"));
     $bulan_angka = (int)date('m', strtotime("-$i month"));
-    $chart_labels[] = $nama_bulan_singkat[$bulan_angka] . ' ' . date('Y', strtotime("-$i month"));
+    $chart_labels[] = $nama_bulan_singkat[$bulan_angka];
     
     $chart_masuk[]  = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='masuk' AND deleted_at IS NULL AND DATE_FORMAT(tanggal,'%Y-%m')='$b'")->fetch_assoc()['t'];
     $chart_keluar[] = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='keluar' AND deleted_at IS NULL AND DATE_FORMAT(tanggal,'%Y-%m')='$b'")->fetch_assoc()['t'];
 }
 
-// Line chart 12 bulan (Trend Pemasukan & Pengeluaran)
+// Line chart 12 bulan (Trend Pemasukan & Pengeluaran)[cite: 2, 3]
 $line_labels = $line_masuk = $line_keluar = [];
 for ($m = 1; $m <= 12; $m++) {
     $b  = sprintf('%04d-%02d', $tahun, $m);
@@ -47,11 +47,11 @@ for ($m = 1; $m <= 12; $m++) {
     $line_keluar[] = $kl;
 }
 
-// Data Donat Gabungan (Pemasukan vs Pengeluaran)
+// Data Donat Gabungan (Pemasukan vs Pengeluaran)[cite: 2, 3]
 $pie_combined_labels = ['Total Pemasukan', 'Total Pengeluaran'];
 $pie_combined_data   = [$total_masuk, $total_keluar];
 
-// Transaksi terbaru
+// Transaksi terbaru[cite: 2, 3]
 $trx_recent = $conn->query("SELECT t.*, k.nama_kategori FROM transaksi t JOIN kategori k ON t.kategori_id=k.id WHERE t.deleted_at IS NULL ORDER BY t.tanggal DESC, t.id DESC LIMIT 6");
 
 $alert = getAlert();
@@ -146,7 +146,7 @@ button, input, select, textarea { font-family: inherit; }
 .page-title { font-size: 1.35rem; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
 .page-subtitle { color: var(--text-muted); font-size: 0.85rem; }
 
-/* 4 KOTAK STATISTIK (MINIMALIS) */
+/* 4 KOTAK STATISTIK: 2 DI KIRI, 2 DI KANAN SAAT DI HP */
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
 .stat-card {
   background: var(--bg-card); padding: 18px 20px; border-radius: var(--radius-lg); 
@@ -165,7 +165,7 @@ button, input, select, textarea { font-family: inherit; }
 .c-keluar .stat-icon-wrap { background: #fee2e2; color: #ef4444; }
 .c-trx .stat-icon-wrap { background: #f3e8ff; color: #7c3aed; }
 
-/* BANNER RINGKASAN BIRU LANGIT / SKY BLUE */
+/* BANNER RINGKASAN BULAN INI */
 .banner-card {
   background: linear-gradient(135deg, #1e6eb5 0%, #3b82f6 50%, #60a5fa 100%);
   border-radius: var(--radius-lg); padding: 22px 28px; color: #fff;
@@ -180,12 +180,28 @@ button, input, select, textarea { font-family: inherit; }
 .b-stat-item .l { font-size: 0.72rem; opacity: 0.85; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
 .banner-sep { width: 1px; height: 32px; background: rgba(255,255,255,0.3); }
 
+/* SLIDESHOW GRAFIK */
+.grafik-slide { display: none; animation: fadeIn 0.3s ease; }
+.grafik-slide.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.slide-progress-wrap { height: 3px; background: var(--border-color); border-radius: 99px; overflow: hidden; margin-bottom: 12px; }
+.slide-progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width linear; }
+
+.slide-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
+.slide-title-box { display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; color: var(--text-main); padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+.slide-counter { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); background: var(--bg-body); padding: 3px 8px; border-radius: 6px; }
+
+.slide-dots { display: flex; justify-content: center; gap: 6px; margin-top: 12px; }
+.sdot { width: 6px; height: 6px; border-radius: 50%; background: #cbd5e1; border: none; cursor: pointer; transition: 0.3s; }
+.sdot.active { background: var(--primary); width: 18px; border-radius: 99px; }
+
 /* CARDS (GRAFIK & TABEL) */
 .card-modern {
   background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm); padding: 20px 24px; margin-bottom: 24px;
 }
-.card-header-modern { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); }
+.card-header-modern { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
 .card-header-modern h3 { font-size: 1rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
 .card-header-modern h3 i { color: var(--primary); }
 
@@ -206,22 +222,6 @@ button, input, select, textarea { font-family: inherit; }
 .badge-green { background: #ebf5ff; color: #1e6eb5; }
 .badge-red { background: #fef2f2; color: #ef4444; }
 
-/* SLIDESHOW GRAFIK */
-.grafik-slide { display: none; animation: fadeIn 0.3s ease; }
-.grafik-slide.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-.slide-progress-wrap { height: 3px; background: var(--border-color); border-radius: 99px; overflow: hidden; margin-bottom: 16px; }
-.slide-progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width linear; }
-
-.slide-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
-.slide-title-box { display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; color: var(--text-main); padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
-.slide-counter { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); background: var(--bg-body); padding: 4px 10px; border-radius: 6px; }
-
-.slide-dots { display: flex; justify-content: center; gap: 6px; margin-top: 16px; }
-.sdot { width: 6px; height: 6px; border-radius: 50%; background: #cbd5e1; border: none; cursor: pointer; transition: 0.3s; }
-.sdot.active { background: var(--primary); width: 18px; border-radius: 99px; }
-
 /* Alert */
 .alert { padding: 12px 16px; border-radius: var(--radius-md); margin-bottom: 20px; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 10px; }
 .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
@@ -229,23 +229,62 @@ button, input, select, textarea { font-family: inherit; }
 
 /* RESPONSIVE */
 @media (max-width: 1024px) {
-  .grid-4 { grid-template-columns: repeat(2, 1fr); }
-  .banner-card { flex-direction: column; text-align: center; gap: 15px; }
-  .banner-sep { display: none; }
   .banner-stats { justify-content: space-around; width: 100%; }
 }
 @media (max-width: 768px) {
+  /* TAMPILAN HP: 4 KOTAK STATISTIK 2 KIRI 2 KANAN */
+  .grid-4 { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; margin-bottom: 16px !important; }
+  .stat-card { padding: 12px 10px !important; gap: 10px !important; }
+  .stat-icon-wrap { width: 34px !important; height: 34px !important; font-size: 0.9rem !important; border-radius: 8px !important; }
+  .stat-label { font-size: 0.65rem !important; }
+  .stat-value { font-size: 0.95rem !important; }
+  .stat-sub { font-size: 0.6rem !important; }
+
+  /* TAMPILAN HP: BANNER BULAN INI & KARTU GRAFIK BERSEBELAHAN (2 KOLOM PADAT) */
+  .dashboard-top-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+    margin-bottom: 20px !important;
+  }
+  .dashboard-top-row > div {
+    margin-bottom: 0 !important;
+    padding: 12px 10px !important;
+    border-radius: 12px !important;
+  }
+  
+  .banner-card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+  }
+  .banner-left h4 { font-size: 0.6rem !important; margin-bottom: 2px !important; }
+  .banner-left h2 { font-size: 0.8rem !important; line-height: 1.2 !important; }
+  .banner-stats {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+  .banner-sep { display: none !important; }
+  .b-stat-item { text-align: left !important; }
+  .b-stat-item .v { font-size: 0.8rem !important; font-weight: 700 !important; }
+  .b-stat-item .l { font-size: 0.55rem !important; margin-top: 1px !important; }
+
+  .card-modern .card-header-modern { margin-bottom: 8px !important; padding-bottom: 6px !important; }
+  .card-modern .card-header-modern h3 { font-size: 0.75rem !important; gap: 4px !important; }
+  .slide-title-box { font-size: 0.6rem !important; padding: 3px 6px !important; }
+  .slide-counter { font-size: 0.6rem !important; padding: 2px 5px !important; }
+  
   .admin-main { width: 100%; margin-left: 0; }
   .admin-content { padding: 15px; }
   .topbar { padding: 0 15px; }
-  .banner-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .selisih-box { grid-column: span 2; border-top: 1px dashed rgba(255,255,255,0.3); padding-top: 10px; }
-  
-  /* Sembunyikan elemen topbar yang tidak muat di HP */
   .t-name, .topbar-date, .fa-chevron-down { display: none; }
 }
 @media (max-width: 480px) {
-  .grid-4 { grid-template-columns: 1fr; }
   .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
 }
 </style>
@@ -311,12 +350,11 @@ button, input, select, textarea { font-family: inherit; }
       <!-- PAGE HEADER -->
       <div class="page-header">
         <div>
-          <h1 class="page-title">Dashboard</h1>
           <p class="page-subtitle">Ringkasan kas Masjid Baeturrohman – <?= tgl_indo(date('Y-m-d')) ?></p>
         </div>
       </div>
 
-      <!-- 4 STAT CARDS (MINIMALIS) -->
+      <!-- 4 STAT CARDS (2 KIRI, 2 KANAN DI HP) -->
       <div class="grid-4">
         <div class="stat-card c-saldo">
           <div class="stat-icon-wrap"><i class="fas fa-wallet"></i></div>
@@ -352,71 +390,74 @@ button, input, select, textarea { font-family: inherit; }
         </div>
       </div>
 
-      <!-- BANNER RINGKASAN BULAN INI -->
-      <div class="banner-card">
-        <div class="banner-left">
-          <h4>Bulan Ini</h4>
-          <h2><?= tgl_indo(date('Y-m-d')) ?></h2>
-        </div>
-        <div class="banner-stats">
-          <div class="b-stat-item">
-            <div class="v"><?= formatRupiah($masuk_bln) ?></div>
-            <div class="l">Pemasukan</div>
+      <!-- KELOMPOK ROW ATAS (BANNER BULAN INI & GRAFIK BERSEBELAHAN DI HP) -->
+      <div class="dashboard-top-row">
+        <!-- BANNER RINGKASAN BULAN INI -->
+        <div class="banner-card">
+          <div class="banner-left">
+            <h4>Bulan Ini</h4>
+            <h2><?= tgl_indo(date('Y-m-d')) ?></h2>
           </div>
-          <div class="banner-sep"></div>
-          <div class="b-stat-item">
-            <div class="v"><?= formatRupiah($keluar_bln) ?></div>
-            <div class="l">Pengeluaran</div>
-          </div>
-          <div class="banner-sep"></div>
-          <div class="b-stat-item selisih-box">
-            <div class="v" style="<?= ($masuk_bln-$keluar_bln)<0 ? 'color:#fecaca;' : '' ?>"><?= formatRupiah($masuk_bln-$keluar_bln) ?></div>
-            <div class="l">Selisih</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- GRAFIK SLIDESHOW (3 SLIDE SAJA) -->
-      <div class="card-modern">
-        <div class="card-header-modern">
-          <h3><i class="fas fa-chart-area"></i> Visualisasi Keuangan</h3>
-        </div>
-        
-        <div class="slide-progress-wrap"><div class="slide-progress-bar" id="slideProgress"></div></div>
-
-        <div class="slide-nav">
-          <div class="slide-title-box">
-            <i id="slideIcon" class="fas fa-chart-bar"></i> <span id="slideTitle">Pemasukan vs Pengeluaran (6 Bulan)</span>
-          </div>
-          <div class="slide-counter" id="slideCounter">1 / 3</div>
-        </div>
-
-        <!-- Slide 1: Bar Chart 6 Bulan -->
-        <div class="grafik-slide active" id="slide-0">
-          <div style="position:relative; height:260px; width:100%;"><canvas id="barChart"></canvas></div>
-        </div>
-
-        <!-- Slide 2: Line Chart 12 Bulan -->
-        <div class="grafik-slide" id="slide-1">
-          <div style="position:relative; height:260px; width:100%;"><canvas id="lineChart"></canvas></div>
-        </div>
-
-        <!-- Slide 3: Doughnut Chart Gabungan (Pemasukan vs Pengeluaran) -->
-        <div class="grafik-slide" id="slide-2">
-          <?php if ($total_masuk > 0 || $total_keluar > 0): ?>
-            <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:30px; width:100%;">
-              <div style="position:relative; width:220px; height:220px;"><canvas id="pieCombined"></canvas></div>
-              <div id="legCombined" style="display:flex; flex-direction:column; gap:10px;"></div>
+          <div class="banner-stats">
+            <div class="b-stat-item">
+              <div class="v"><?= formatRupiah($masuk_bln) ?></div>
+              <div class="l">Pemasukan</div>
             </div>
-          <?php else: ?>
-            <div style="text-align:center; padding:30px; color:var(--text-muted);"><p>Belum ada data keuangan untuk ditampilkan</p></div>
-          <?php endif; ?>
+            <div class="banner-sep"></div>
+            <div class="b-stat-item">
+              <div class="v"><?= formatRupiah($keluar_bln) ?></div>
+              <div class="l">Pengeluaran</div>
+            </div>
+            <div class="banner-sep"></div>
+            <div class="b-stat-item selisih-box">
+              <div class="v" style="<?= ($masuk_bln-$keluar_bln)<0 ? 'color:#fecaca;' : '' ?>"><?= formatRupiah($masuk_bln-$keluar_bln) ?></div>
+              <div class="l">Selisih</div>
+            </div>
+          </div>
         </div>
 
-        <div class="slide-dots">
-          <button class="sdot active" onclick="goToSlide(0)"></button>
-          <button class="sdot" onclick="goToSlide(1)"></button>
-          <button class="sdot" onclick="goToSlide(2)"></button>
+        <!-- GRAFIK SLIDESHOW (3 SLIDE SAJA) -->
+        <div class="card-modern">
+          <div class="card-header-modern">
+            <h3><i class="fas fa-chart-area"></i> Visualisasi Keuangan</h3>
+          </div>
+          
+          <div class="slide-progress-wrap"><div class="slide-progress-bar" id="slideProgress"></div></div>
+
+          <div class="slide-nav">
+            <div class="slide-title-box">
+              <i id="slideIcon" class="fas fa-chart-bar"></i> <span id="slideTitle">Pemasukan vs Pengeluaran (6 Bulan)</span>
+            </div>
+            <div class="slide-counter" id="slideCounter">1 / 3</div>
+          </div>
+
+          <!-- Slide 1: Bar Chart 6 Bulan -->
+          <div class="grafik-slide active" id="slide-0">
+            <div style="position:relative; height:240px; width:100%;"><canvas id="barChart"></canvas></div>
+          </div>
+
+          <!-- Slide 2: Line Chart 12 Bulan -->
+          <div class="grafik-slide" id="slide-1">
+            <div style="position:relative; height:240px; width:100%;"><canvas id="lineChart"></canvas></div>
+          </div>
+
+          <!-- Slide 3: Doughnut Chart Gabungan (Pemasukan vs Pengeluaran) -->
+          <div class="grafik-slide" id="slide-2">
+            <?php if ($total_masuk > 0 || $total_keluar > 0): ?>
+              <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:20px; width:100%;">
+                <div style="position:relative; width:180px; height:180px;"><canvas id="pieCombined"></canvas></div>
+                <div id="legCombined" style="display:flex; flex-direction:column; gap:8px;"></div>
+              </div>
+            <?php else: ?>
+              <div style="text-align:center; padding:20px; color:var(--text-muted);"><p>Belum ada data keuangan</p></div>
+            <?php endif; ?>
+          </div>
+
+          <div class="slide-dots">
+            <button class="sdot active" onclick="goToSlide(0)"></button>
+            <button class="sdot" onclick="goToSlide(1)"></button>
+            <button class="sdot" onclick="goToSlide(2)"></button>
+          </div>
         </div>
       </div>
 
@@ -430,6 +471,7 @@ button, input, select, textarea { font-family: inherit; }
           <table class="table-custom">
             <thead>
               <tr>
+                <th style="width: 50px;">No</th>
                 <th>Tanggal</th>
                 <th>Keterangan</th>
                 <th>Kategori</th>
@@ -438,8 +480,12 @@ button, input, select, textarea { font-family: inherit; }
               </tr>
             </thead>
             <tbody>
-              <?php while ($r = $trx_recent->fetch_assoc()): ?>
+              <?php 
+              $no = 1;
+              while ($r = $trx_recent->fetch_assoc()): 
+              ?>
               <tr>
+                <td style="color: var(--text-muted); font-weight: 500;"><?= $no++ ?></td>
                 <td style="white-space:nowrap; color:var(--text-muted);"><?= tgl_indo($r['tanggal']) ?></td>
                 <td style="max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:500;"><?= htmlspecialchars($r['keterangan']) ?></td>
                 <td><span class="badge-custom badge-blue"><?= htmlspecialchars($r['nama_kategori']) ?></span></td>
@@ -509,7 +555,7 @@ if (overlay) {
 
 // Chart Configurations
 Chart.defaults.font.family = "'Inter', sans-serif";
-Chart.defaults.font.size = 12;
+Chart.defaults.font.size = 11;
 Chart.defaults.color = '#64748b';
 Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15,23,42,0.9)';
 Chart.defaults.plugins.tooltip.padding = 10;
@@ -517,20 +563,34 @@ Chart.defaults.plugins.tooltip.cornerRadius = 6;
 
 const fmtRp = v => 'Rp ' + new Intl.NumberFormat('id-ID').format(v);
 
-// 1. Bar Chart (Pemasukan: Biru #1e6eb5, Pengeluaran: Merah #ef4444)
+// Konfigurasi Sumbu Y: Menyembunyikan angka di samping secara total (display: false) agar bersih dan minimalis
+const getAxisConfig = () => ({
+  grid: { color: '#f1f5f9' },
+  ticks: { display: false }
+});
+
+// 1. Bar Chart (Pemasukan vs Pengeluaran)
 new Chart(document.getElementById('barChart').getContext('2d'), {
   type:'bar',
   data:{labels:<?= json_encode($chart_labels) ?>,datasets:[
     {label:'Pemasukan', data:<?= json_encode($chart_masuk) ?>, backgroundColor:'#1e6eb5', borderRadius:4},
     {label:'Pengeluaran', data:<?= json_encode($chart_keluar) ?>, backgroundColor:'#ef4444', borderRadius:4}
   ]},
-  options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{position:'bottom',labels:{usePointStyle:true, padding:15, font:{weight:'500'}}}},
-    scales:{x:{grid:{display:false}},y:{grid:{color:'#f1f5f9'},ticks:{callback:v=>fmtRp(v)}}}
+  options:{
+    responsive:true,
+    maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{usePointStyle:true, padding:10, font:{weight:'500'}}}},
+    scales:{
+      x:{
+        grid:{display:false},
+        ticks:{ maxRotation: 0, autoSkip: false }
+      },
+      y: getAxisConfig()
+    }
   }
 });
 
-// 2. Line Chart (Pemasukan & Pengeluaran 12 Bulan)
+// 2. Line Chart (Trend 12 Bulan)
 new Chart(document.getElementById('lineChart').getContext('2d'), {
   type:'line',
   data:{
@@ -567,20 +627,25 @@ new Chart(document.getElementById('lineChart').getContext('2d'), {
       legend:{
         display:true,
         position:'bottom',
-        labels:{usePointStyle:true, padding:15, font:{weight:'500'}}
+        labels:{usePointStyle:true, padding:10, font:{weight:'500'}}
       }
     },
     scales:{
-      x:{grid:{display:false}},
-      y:{grid:{color:'#f1f5f9'},ticks:{callback:v=>fmtRp(v)}}
+      x:{
+        grid:{display:false},
+        ticks:{ maxRotation: 0, autoSkip: true, maxTicksLimit: window.innerWidth <= 768 ? 6 : 12 }
+      },
+      y: getAxisConfig()
     }
   }
 });
 
-// 3. Doughnut Chart Gabungan (Pemasukan vs Pengeluaran)
+// 3. Doughnut Chart Proporsi Keuangan
 const pieLabels = <?= json_encode($pie_combined_labels) ?>;
 const pieData   = <?= json_encode($pie_combined_data) ?>;
 const pieColors = ['#1e6eb5', '#ef4444'];
+
+const fmtRpFull = v => 'Rp ' + new Intl.NumberFormat('id-ID').format(v);
 
 if (document.getElementById('pieCombined')) {
   new Chart(document.getElementById('pieCombined').getContext('2d'), {
@@ -606,10 +671,10 @@ if (document.getElementById('pieCombined')) {
   pieLabels.forEach((l, i) => {
     const pct = total > 0 ? ((pieData[i] / total) * 100).toFixed(1) : 0;
     leg.innerHTML += `
-      <div style="display:flex;align-items:center;gap:10px;font-size:0.85rem;font-weight:600;color:var(--text-main);">
-        <span style="width:10px;height:10px;border-radius:50%;background:${pieColors[i]}"></span>
+      <div style="display:flex;align-items:center;gap:8px;font-size:0.75rem;font-weight:600;color:var(--text-main);">
+        <span style="width:8px;height:8px;border-radius:50%;background:${pieColors[i]}"></span>
         ${l}
-        <span style="margin-left:auto;color:var(--text-muted);font-weight:500;">${fmtRp(pieData[i])} (${pct}%)</span>
+        <span style="margin-left:auto;color:var(--text-muted);font-weight:500;">${fmtRpFull(pieData[i])} (${pct}%)</span>
       </div>`;
   });
 }

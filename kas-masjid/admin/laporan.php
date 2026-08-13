@@ -402,7 +402,6 @@ endif;
 }
 .modern-modal-overlay.active .modern-modal-box { transform: scale(1) translateY(0); }
 
-/* Header Modal Bersih & Text Biru Modern */
 .modern-modal-header {
   padding: 20px 24px; background: #ffffff; 
   border-bottom: 1px solid #e2e8f0; 
@@ -414,7 +413,6 @@ endif;
   letter-spacing: -0.2px;
 }
 
-/* Tombol silang */
 .modern-modal-close {
   width: 32px; height: 32px; background: transparent; border: none;
   display: flex; align-items: center; justify-content: center; 
@@ -422,10 +420,8 @@ endif;
 }
 .modern-modal-close:hover { color: #0f172a; }
 
-/* Body Modal */
 .modern-modal-body { padding: 24px; background: #ffffff; }
 
-/* Form Controls */
 .modern-modal-body .form-label { 
     font-size: 0.85rem; font-weight: 600; color: #334155; 
     margin-bottom: 8px; letter-spacing: -0.1px; display: block;
@@ -441,9 +437,8 @@ endif;
     box-shadow: 0 0 0 3px rgba(30,110,181,0.15); 
 }
 
-/* Footer Modal */
 .modern-modal-footer {
-    display: flex; justify-content: flex-end; align-items: center; gap: 12px;
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
     margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9;
 }
 
@@ -539,13 +534,11 @@ endif;
     <div class="alert alert-<?= $alert['type'] ?>"><i class="fas fa-check-circle"></i> <?= htmlspecialchars($alert['message']) ?></div>
     <?php endif; ?>
     
-    <div class="page-header">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-        <div>
-          <h1 class="page-title"><i class="fas fa-file-invoice-dollar"></i> Laporan Keuangan</h1>
-        </div>
+    <div class="page-header" style="position: relative;">
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
         
-        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; width:100%;">
           <!-- TOMBOL POP-UP FILTER LAPORAN -->
           <button type="button" class="btn" onclick="openFilterModal()" style="background:#ffffff; color:var(--text-primary); border:1px solid #cbd5e1; box-shadow:0 1px 2px rgba(0,0,0,0.05); display:inline-flex; align-items:center; gap:8px;">
             <i class="fas fa-filter" style="color:var(--primary);"></i> Filter Laporan
@@ -553,9 +546,6 @@ endif;
           
           <a href="?<?= http_build_query(array_merge($_GET,['print'=>1])) ?>" target="_blank" class="btn" style="background-color: #d4af37; color: white; border: none;">
             <i class="fas fa-print"></i> Cetak / Ekspor PDF
-          </a>
-          <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn" style="background:var(--primary);color:#fff;border:none;">
-            <i class="fas fa-arrow-left"></i> Kembali
           </a>
         </div>
       </div>

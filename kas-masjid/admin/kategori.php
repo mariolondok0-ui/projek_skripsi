@@ -70,7 +70,7 @@ $jml_keluar = $conn->query("SELECT COUNT(*) as c FROM kategori WHERE jenis='kelu
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* =======================================================
-   STYLING POP-UP MODAL KATEGORI MODERN
+   STYLING MODAL POP-UP KATEGORI MODERN
    ======================================================= */
 .modern-modal-overlay {
   position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65);
@@ -121,16 +121,17 @@ $jml_keluar = $conn->query("SELECT COUNT(*) as c FROM kategori WHERE jenis='kelu
     box-shadow: 0 0 0 3px rgba(30,110,181,0.15); outline: none;
 }
 
+/* TOMBOL BATAL DI KIRI & AKSI DI KANAN DENGAN WARNA SELARAS */
 .modern-modal-footer {
-    display: flex; justify-content: flex-end; align-items: center; gap: 12px;
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
     margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9;
 }
 .btn-modal-batal {
-    background: #f1f5f9; color: #475569; font-weight: 600; font-size: 0.875rem;
-    border: none; padding: 11px 20px; border-radius: 8px; cursor: pointer; transition: 0.2s;
+    background: #e2e8f0; color: #334155; font-weight: 600; font-size: 0.875rem;
+    border: none; padding: 11px 24px; border-radius: 8px; cursor: pointer; transition: 0.2s;
     font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
-.btn-modal-batal:hover { background: #e2e8f0; color: #0f172a; }
+.btn-modal-batal:hover { background: #cbd5e1; color: #0f172a; }
 
 .btn-modal-simpan {
     background: var(--primary); color: #ffffff; font-weight: 600; font-size: 0.875rem;
@@ -148,7 +149,7 @@ $jml_keluar = $conn->query("SELECT COUNT(*) as c FROM kategori WHERE jenis='kelu
 }
 .btn-modal-hapus:hover { background: #dc2626; transform: translateY(-1px); color: #ffffff; }
 
-/* Tab Navigasi Kategori Model Kapsul Sejajar */
+/* Tab Navigasi Kategori Model Kapsul */
 .kat-tab-btn {
     background: #ffffff; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 99px;
     font-size: 0.9rem; font-weight: 600; color: #475569; cursor: pointer; display: inline-flex;
@@ -159,9 +160,41 @@ $jml_keluar = $conn->query("SELECT COUNT(*) as c FROM kategori WHERE jenis='kelu
     box-shadow: 0 4px 12px rgba(30,110,181,0.25);
 }
 
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.kat-action-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.kat-tabs-wrapper {
+    display: flex;
+    gap: 10px;
+}
+
 @media(max-width: 768px) {
     .admin-main { width: 100% !important; margin-left: 0 !important; }
     .admin-content { padding: 15px !important; }
+    
+    .kat-action-container {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    .kat-tabs-wrapper {
+        flex-direction: column !important;
+        width: 100% !important;
+    }
+    .kat-tab-btn {
+        width: 100% !important;
+        justify-content: center !important;
+    }
 }
 </style>
 </head>
@@ -214,23 +247,13 @@ $jml_keluar = $conn->query("SELECT COUNT(*) as c FROM kategori WHERE jenis='kelu
     </div>
     <?php endif; ?>
 
-    <!-- PAGE HEADER -->
-    <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px;">
-      <div>
-        <h1 class="page-title"><i class="fas fa-tags"></i> Kategori Transaksi</h1>
-        <p class="page-subtitle">Kelola kategori pemasukan dan pengeluaran kas masjid</p>
-      </div>
+        <!-- TOMBOL TAMBAH KATEGORI & TAB NAVIGASI -->
+    <div class="kat-action-container">
+      <button type="button" class="kat-tab-btn" onclick="openAddModal()" style="background:var(--primary); color:#fff; border-color:var(--primary); box-shadow:0 4px 12px rgba(30,110,181,0.25);">
+        <i class="fas fa-plus"></i> Tambah Kategori
+      </button>
 
-      <div>
-        <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn" style="background:#ffffff; color:var(--text-main); border:1px solid #cbd5e1; font-weight:600;">
-          <i class="fas fa-arrow-left"></i> Kembali
-        </a>
-      </div>
-    </div>
-
-    <!-- TAB NAVIGASI & TOMBOL TAMBAH KATEGORI TERSEJAJAR -->
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <div class="kat-tabs-wrapper">
         <button class="kat-tab-btn active" id="tabBtnMasuk" onclick="switchTab('masuk')">
           <i class="fas fa-arrow-down" style="color:var(--success)"></i> Pemasukan <span class="badge" style="background:rgba(255,255,255,0.3); padding:2px 8px; border-radius:99px; font-weight:700;"><?= $jml_masuk ?></span>
         </button>
@@ -238,11 +261,6 @@ $jml_keluar = $conn->query("SELECT COUNT(*) as c FROM kategori WHERE jenis='kelu
           <i class="fas fa-arrow-up" style="color:var(--danger)"></i> Pengeluaran <span class="badge" style="background:rgba(0,0,0,0.08); padding:2px 8px; border-radius:99px; font-weight:700;"><?= $jml_keluar ?></span>
         </button>
       </div>
-
-      <!-- TOMBOL TAMBAH KATEGORI SEJAJAR DENGAN TAB -->
-      <button type="button" class="kat-tab-btn" onclick="openAddModal()" style="background:var(--primary); color:#fff; border-color:var(--primary); box-shadow:0 4px 12px rgba(30,110,181,0.25);">
-        <i class="fas fa-plus"></i> Tambah Kategori
-      </button>
     </div>
 
     <!-- KONTEN TAB KATEGORI PEMASUKAN -->
@@ -255,18 +273,20 @@ $jml_keluar = $conn->query("SELECT COUNT(*) as c FROM kategori WHERE jenis='kelu
           <span class="badge badge-primary"><?= $jml_masuk ?> Kategori</span>
         </div>
         <div class="table-responsive">
-          <table class="table-custom" style="width:100%; border-collapse:collapse;">
+          <table class="table-custom" style="width:100%; border-collapse:collapse; min-width:320px;">
             <tbody>
               <?php if ($kat_masuk->num_rows > 0): while($r = $kat_masuk->fetch_assoc()): ?>
               <tr style="border-bottom:1px solid var(--border-color);">
-                <td style="padding:14px 24px; font-weight:600; color:var(--text-main); display:flex; align-items:center; gap:10px;">
-                  <span style="width:8px; height:8px; border-radius:50%; background:var(--primary);"></span>
-                  <?= htmlspecialchars($r['nama_kategori']) ?>
+                <td style="padding:14px 20px; font-weight:600; color:var(--text-main);">
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="width:8px; height:8px; border-radius:50%; background:var(--primary); flex-shrink:0;"></span>
+                    <span><?= htmlspecialchars($r['nama_kategori']) ?></span>
+                  </div>
                 </td>
-                <td style="padding:14px 24px; text-align:right; width:150px;">
+                <td style="padding:14px 20px; text-align:right; width:130px; white-space:nowrap;">
                   <span class="badge-custom badge-blue"><?= $r['jml'] ?> transaksi</span>
                 </td>
-                <td style="padding:14px 24px; text-align:center; width:120px;">
+                <td style="padding:14px 20px; text-align:center; width:100px; white-space:nowrap;">
                   <div style="display:flex; justify-content:center; gap:6px;">
                     <button onclick="openEditModal(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['nama_kategori'])) ?>', 'masuk')" class="btn-icon" title="Edit"><i class="fas fa-edit"></i></button>
                     <?php if($r['jml'] == 0): ?>
@@ -296,18 +316,20 @@ $jml_keluar = $conn->query("SELECT COUNT(*) as c FROM kategori WHERE jenis='kelu
           <span class="badge badge-danger"><?= $jml_keluar ?> Kategori</span>
         </div>
         <div class="table-responsive">
-          <table class="table-custom" style="width:100%; border-collapse:collapse;">
+          <table class="table-custom" style="width:100%; border-collapse:collapse; min-width:320px;">
             <tbody>
               <?php if ($kat_keluar->num_rows > 0): while($r = $kat_keluar->fetch_assoc()): ?>
               <tr style="border-bottom:1px solid var(--border-color);">
-                <td style="padding:14px 24px; font-weight:600; color:var(--text-main); display:flex; align-items:center; gap:10px;">
-                  <span style="width:8px; height:8px; border-radius:50%; background:var(--danger);"></span>
-                  <?= htmlspecialchars($r['nama_kategori']) ?>
+                <td style="padding:14px 20px; font-weight:600; color:var(--text-main);">
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="width:8px; height:8px; border-radius:50%; background:var(--danger); flex-shrink:0;"></span>
+                    <span><?= htmlspecialchars($r['nama_kategori']) ?></span>
+                  </div>
                 </td>
-                <td style="padding:14px 24px; text-align:right; width:150px;">
+                <td style="padding:14px 20px; text-align:right; width:130px; white-space:nowrap;">
                   <span class="badge-custom badge-blue"><?= $r['jml'] ?> transaksi</span>
                 </td>
-                <td style="padding:14px 24px; text-align:center; width:120px;">
+                <td style="padding:14px 20px; text-align:center; width:100px; white-space:nowrap;">
                   <div style="display:flex; justify-content:center; gap:6px;">
                     <button onclick="openEditModal(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['nama_kategori'])) ?>', 'keluar')" class="btn-icon" title="Edit"><i class="fas fa-edit"></i></button>
                     <?php if($r['jml'] == 0): ?>

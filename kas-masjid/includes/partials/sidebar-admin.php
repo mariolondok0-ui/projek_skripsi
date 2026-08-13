@@ -6,7 +6,7 @@ $admin_init = strtoupper(substr($admin_name, 0, 1));
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 <aside class="sidebar" id="adminSidebar">
   <div class="sidebar-header">
-    <div class="sidebar-logo" style="background-color: #d4af37; width: 45px; height: 45px; border-radius: 12px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);">
+    <div class="sidebar-logo" style="background: linear-gradient(135deg, #1e6eb5, #3b82f6) !important; width: 45px; height: 45px; border-radius: 12px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 12px rgba(30, 110, 181, 0.4) !important; border: 1px solid rgba(255, 255, 255, 0.2);">
       <i class="fas fa-mosque" style="color: #ffffff; font-size: 22px;"></i>
     </div>
     <div class="sidebar-brand">

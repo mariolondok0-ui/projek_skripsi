@@ -114,7 +114,6 @@ $alert = getAlert();
 }
 .modern-modal-overlay.active .modern-modal-box { transform: scale(1) translateY(0); }
 
-/* Header Modal */
 .modern-modal-header {
   padding: 20px 24px; background: #ffffff; 
   border-bottom: 1px solid #e2e8f0; 
@@ -125,8 +124,6 @@ $alert = getAlert();
   display: flex; align-items: center; gap: 10px;
   letter-spacing: -0.2px;
 }
-
-/* Tombol silang */
 .modern-modal-close {
   width: 32px; height: 32px; background: transparent; border: none;
   display: flex; align-items: center; justify-content: center; 
@@ -134,21 +131,20 @@ $alert = getAlert();
 }
 .modern-modal-close:hover { color: #0f172a; }
 
-/* Body Modal */
 .modern-modal-body { padding: 24px; background: #ffffff; }
 
-/* Footer Modal */
+/* TOMBOL BATAL DENGAN WARNA ABU-ABU ELEGAN DAN SELARAS */
 .modern-modal-footer {
-    display: flex; justify-content: flex-end; align-items: center; gap: 12px;
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
     margin-top: 20px; padding-top: 16px; border-top: 1px solid #f1f5f9;
 }
 
 .btn-modal-batal {
-    background: #f1f5f9; color: #475569; font-weight: 600; font-size: 0.875rem;
+    background: #e2e8f0; color: #334155; font-weight: 600; font-size: 0.875rem;
     border: none; padding: 11px 24px; border-radius: 8px; cursor: pointer; transition: 0.2s;
     font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
-.btn-modal-batal:hover { background: #e2e8f0; color: #0f172a; }
+.btn-modal-batal:hover { background: #cbd5e1; color: #0f172a; }
 
 .btn-modal-pulihkan {
     background: var(--primary); color: #ffffff; font-weight: 600; font-size: 0.875rem;
@@ -195,6 +191,68 @@ select.form-select {
     transition: all 0.2s ease;
 }
 
+/* STAT CARDS */
+.trash-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: left !important;
+    padding: 20px 20px !important;
+    gap: 14px !important;
+}
+
+.stat-card .stat-icon {
+    position: static !important;
+    transform: none !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+}
+
+.stat-card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.stat-card.red-trash .stat-icon {
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: var(--danger) !important;
+}
+
+.info-banner-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.info-banner-actions button {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 14px;
+}
+
+.filter-bar-form {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 12px;
+}
+
+.filter-bar-form select {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
 @media (max-width: 768px) {
     html, body { overflow-x: hidden !important; max-width: 100vw !important; }
     .admin-wrapper { display: block !important; width: 100% !important; overflow-x: hidden !important; }
@@ -203,9 +261,40 @@ select.form-select {
     .topbar { width: 100% !important; box-sizing: border-box !important; padding: 12px 15px !important; }
     .t-name { display: none !important; }
 
-    .grid-3 { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; width: 100% !important; }
-    .grid-3 > div:first-child { grid-column: span 2 !important; }
-    .stat-card { padding: 15px 12px !important; border-radius: 12px !important; width: auto !important; margin: 0 !important; }
+    .trash-stats-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        width: 100% !important;
+    }
+    .trash-stats-grid > div {
+        width: 100% !important;
+    }
+    .stat-card { 
+        padding: 18px 20px !important; 
+        border-radius: 12px !important; 
+        width: 100% !important; 
+        margin: 0 !important; 
+        box-sizing: border-box !important; 
+        justify-content: center !important; 
+    }
+    
+    .info-banner {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    .info-banner-actions {
+        flex-direction: column !important;
+    }
+    .info-banner-actions button {
+        width: 100% !important;
+    }
+
+    .filter-bar-form {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
     .table-wrapper table { min-width: 800px !important; }
 }
 </style>
@@ -226,7 +315,7 @@ select.form-select {
       </div>
     </div>
     <div class="topbar-right">
-      <div class="topbar-date"><i class="fas fa-calendar-alt me-1" style="margin-right: 4px;"></i> <?= formatTanggalIndo(date('Y-m-d')) ?></div>
+      <div class="topbar-date"><i class="fas fa-calendar-alt me-1" style="margin-right: 4px;"></i> <?= formatTanggalIndo(date('Y-m-d')) ?>[cite: 2]</div>
       
       <!-- DROPDOWN PROFIL USER -->
       <div class="user-dropdown-wrapper" id="userDropdownWrap">
@@ -266,43 +355,37 @@ select.form-select {
     </div>
     <?php endif; ?>
 
-    <!-- PAGE HEADER -->
-    <div style="margin-bottom:24px; padding-bottom:16px; border-bottom:1px dashed var(--border-light);">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:15px; margin-bottom:8px;">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <div style="width:36px; height:36px; background:rgba(239,68,68,0.1); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--danger); font-size:1.1rem; flex-shrink:0;">
-            <i class="fas fa-trash-alt"></i>
-          </div>
-          <h1 style="font-size:1.25rem; font-weight:800; color:var(--text-primary); margin:0;">Tempat Sampah</h1>
-        </div>
-        <a href="<?= APP_URL ?>/admin/dashboard.php" style="flex-shrink:0; background:var(--bg-main); border:1px solid var(--border-light); padding:8px 14px; border-radius:8px; box-shadow:0 1px 2px rgba(0,0,0,0.05); color:var(--text-primary); text-decoration:none; display:flex; align-items:center; gap:6px; font-size:0.85rem; font-weight:600; transition:all 0.2s;">
-          <i class="fas fa-arrow-left"></i> Kembali
-        </a>
-      </div>
-      <p style="font-size:0.82rem; color:var(--text-muted); margin:0; line-height:1.5;">
-        Data yang dihapus tersimpan di sini bisa dipulihkan atau dihapus permanen
-      </p>
-    </div>
-
     <!-- STAT CARDS -->
-    <div class="grid-3 mb-3">
-      <div class="stat-card blue animate-fadeIn">
-        <div class="stat-icon"><i class="fas fa-trash"></i></div>
-        <div class="stat-label">Total Data Sampah</div>
-        <div class="stat-value"><?= $jml_total ?> data</div>
-        <div class="stat-sub"><i class="fas fa-info-circle"></i> Menunggu tindakan</div>
+    <div class="trash-stats-grid">
+      <div class="stat-card red-trash animate-fadeIn">
+        <div class="stat-card-inner" style="display:flex; align-items:center; gap:14px;">
+          <div class="stat-icon"><i class="fas fa-trash"></i></div>
+          <div class="stat-card-content">
+            <div class="stat-label">TOTAL DATA SAMPAH</div>
+            <div class="stat-value"><?= $jml_total ?> data</div>
+            <div class="stat-sub"><i class="fas fa-info-circle"></i> Menunggu tindakan</div>
+          </div>
+        </div>
       </div>
       <div class="stat-card green animate-fadeIn delay-1">
-        <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
-        <div class="stat-label">Kas Masuk Terhapus</div>
-        <div class="stat-value"><?= $jml_masuk ?> data</div>
-        <div class="stat-sub"><i class="fas fa-undo"></i> Bisa dipulihkan</div>
+        <div class="stat-card-inner" style="display:flex; align-items:center; gap:14px;">
+          <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
+          <div class="stat-card-content">
+            <div class="stat-label">KAS MASUK TERHAPUS</div>
+            <div class="stat-value"><?= $jml_masuk ?> data</div>
+            <div class="stat-sub"><i class="fas fa-undo"></i> Bisa dipulihkan</div>
+          </div>
+        </div>
       </div>
       <div class="stat-card red animate-fadeIn delay-2">
-        <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
-        <div class="stat-label">Kas Keluar Terhapus</div>
-        <div class="stat-value"><?= $jml_keluar ?> data</div>
-        <div class="stat-sub"><i class="fas fa-undo"></i> Bisa dipulihkan</div>
+        <div class="stat-card-inner" style="display:flex; align-items:center; gap:14px;">
+          <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
+          <div class="stat-card-content">
+            <div class="stat-label">KAS KELUAR TERHAPUS</div>
+            <div class="stat-value"><?= $jml_keluar ?> data</div>
+            <div class="stat-sub"><i class="fas fa-undo"></i> Bisa dipulihkan</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -310,7 +393,7 @@ select.form-select {
     <?php if ($jml_total > 0): ?>
     <div class="info-banner" style="background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(245,158,11,.08));border:1px solid rgba(239,68,68,.2);border-radius:var(--radius-lg);padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
       <div style="display:flex;align-items:center;gap:10px">
-        <i class="fas fa-exclamation-triangle" style="color:var(--warning);font-size:1.2rem"></i>
+        <i class="fas fa-exclamation-triangle" style="color:var(--warning);font-size:1.2rem;flex-shrink:0;"></i>
         <div>
           <div style="font-weight:700;font-size:.9rem;color:var(--text-primary)">
             Ada <?= $jml_total ?> data di tempat sampah
@@ -320,7 +403,7 @@ select.form-select {
           </div>
         </div>
       </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div class="info-banner-actions">
         <button onclick="confirmPulihkanSemua()" class="btn btn-success btn-sm">
           <i class="fas fa-undo"></i> Pulihkan Semua
         </button>
@@ -332,17 +415,21 @@ select.form-select {
     <?php endif; ?>
 
     <!-- FILTER -->
-    <div class="filter-bar">
-      <span class="filter-label"><i class="fas fa-filter"></i> Filter:</span>
-      <form method="GET" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <select name="jenis" class="form-control form-select" style="max-width:180px" onchange="this.form.submit()">
-          <option value="semua"  <?= $filter_jenis=='semua'?'selected':'' ?>>Semua Jenis</option>
-          <option value="masuk"  <?= $filter_jenis=='masuk'?'selected':'' ?>>Kas Masuk</option>
-          <option value="keluar" <?= $filter_jenis=='keluar'?'selected':'' ?>>Kas Keluar</option>
-        </select>
-        <span style="font-size:.8rem;color:var(--text-muted)">
-          <i class="fas fa-database"></i> <?= $total_rows ?> data
-        </span>
+    <div class="filter-bar" style="padding:14px 18px;">
+      <form method="GET" class="filter-bar-form">
+        <div style="display:flex; align-items:center; gap:8px; width:100%;">
+          <span class="filter-label" style="white-space:nowrap;"><i class="fas fa-filter"></i> Filter:</span>
+          <select name="jenis" class="form-control form-select" onchange="this.form.submit()">
+            <option value="semua"  <?= $filter_jenis=='semua'?'selected':'' ?>>Semua Jenis</option>
+            <option value="masuk"  <?= $filter_jenis=='masuk'?'selected':'' ?>>Kas Masuk</option>
+            <option value="keluar" <?= $filter_jenis=='keluar'?'selected':'' ?>>Kas Keluar</option>
+          </select>
+        </div>
+        <div style="text-align:right; width:100%;">
+          <span style="font-size:.8rem;color:var(--text-muted); white-space:nowrap;">
+            <i class="fas fa-database"></i> <?= $total_rows ?> data
+          </span>
+        </div>
       </form>
     </div>
 
@@ -368,7 +455,7 @@ select.form-select {
           <tr style="opacity:.85">
             <td class="text-muted"><?= $no++ ?></td>
             <!-- Menggunakan Format Tanggal Indonesia -->
-            <td style="white-space:nowrap;"><?= formatTanggalIndo($r['tanggal']) ?></td>
+            <td style="white-space:nowrap;"><?= formatTanggalIndo($r['tanggal']) ?>[cite: 2]</td>
             <td>
               <span style="text-decoration:line-through;color:var(--text-muted)">
                 <?= htmlspecialchars($r['keterangan']) ?>
@@ -377,8 +464,8 @@ select.form-select {
             <td><span class="badge badge-primary" style="white-space:nowrap;"><?= htmlspecialchars($r['nama_kategori']) ?></span></td>
             <td style="white-space:nowrap;">
               <?= $r['jenis']=='masuk'
-                ? '<span class="badge badge-success"><i class="fas fa-arrow-down"></i> Masuk</span>'
-                : '<span class="badge badge-danger"><i class="fas fa-arrow-up"></i> Keluar</span>' ?>
+                ? '<span class="badge badge-success"><i class="fas fa-arrow-up"></i> Masuk</span>'
+                : '<span class="badge badge-danger"><i class="fas fa-arrow-down"></i> Keluar</span>' ?>
             </td>
             <td class="text-right fw-600 <?= $r['jenis']=='masuk'?'text-success':'text-danger' ?>"
                 style="text-decoration:line-through;opacity:.7;white-space:nowrap;">
@@ -387,7 +474,7 @@ select.form-select {
             <!-- Menggunakan Format Tanggal Indonesia dengan Waktu -->
             <td style="font-size:.78rem;color:var(--text-muted);white-space:nowrap;">
               <i class="fas fa-clock"></i>
-              <?= formatTanggalIndo($r['deleted_at'], true) ?>
+              <?= formatTanggalIndo($r['deleted_at'], true) ?>[cite: 2]
             </td>
             <td>
               <div style="display:flex;gap:6px;justify-content:center">

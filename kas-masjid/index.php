@@ -26,6 +26,7 @@ function bln_indo_pub($bulan_angka) {
     return $bulan[(int)$bulan_angka] ?? '';
 }
 
+// Data statistik disamakan persis dengan logika admin/dashboard.php[cite: 3, 4]
 $total_masuk  = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='masuk' AND deleted_at IS NULL")->fetch_assoc()['t'];
 $total_keluar = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='keluar' AND deleted_at IS NULL")->fetch_assoc()['t'];
 $saldo        = $total_masuk - $total_keluar;
@@ -38,17 +39,17 @@ $trx_bln      = (int)$conn->query("SELECT COUNT(*) as t FROM transaksi WHERE del
 
 $nama_bulan_singkat = [1=>'Jan', 2=>'Feb', 3=>'Mar', 4=>'Apr', 5=>'Mei', 6=>'Jun', 7=>'Jul', 8=>'Agt', 9=>'Sep', 10=>'Okt', 11=>'Nov', 12=>'Des'];
 
-// Bar Chart 6 Bulan
+// Bar Chart 6 Bulan[cite: 3, 4]
 $chart_labels = $chart_masuk = $chart_keluar = [];
 for ($i = 5; $i >= 0; $i--) {
     $b = date('Y-m', strtotime("-$i month"));
     $bulan_angka = (int)date('m', strtotime("-$i month"));
-    $chart_labels[] = $nama_bulan_singkat[$bulan_angka] . ' ' . date('Y', strtotime("-$i month"));
+    $chart_labels[] = $nama_bulan_singkat[$bulan_angka];
     $chart_masuk[]  = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='masuk' AND deleted_at IS NULL AND DATE_FORMAT(tanggal,'%Y-%m')='$b'")->fetch_assoc()['t'];
     $chart_keluar[] = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='keluar' AND deleted_at IS NULL AND DATE_FORMAT(tanggal,'%Y-%m')='$b'")->fetch_assoc()['t'];
 }
 
-// Line Chart 12 Bulan (Pemasukan & Pengeluaran)
+// Line Chart 12 Bulan (Pemasukan & Pengeluaran)[cite: 3, 4]
 $line_labels = $line_masuk = $line_keluar = [];
 for ($m = 1; $m <= 12; $m++) {
     $b  = sprintf('%04d-%02d', $tahun, $m);
@@ -60,7 +61,7 @@ for ($m = 1; $m <= 12; $m++) {
     $line_keluar[] = $kl;
 }
 
-// Data Donat Gabungan (Pemasukan vs Pengeluaran)
+// Data Donat Gabungan (Pemasukan vs Pengeluaran)[cite: 3, 4]
 $pie_combined_labels = ['Total Pemasukan', 'Total Pengeluaran'];
 $pie_combined_data   = [$total_masuk, $total_keluar];
 
@@ -146,13 +147,19 @@ a { text-decoration: none; }
   text-decoration: none;
 }
 
-.img-logo {
+/* Style Kotak Logo Ikon Masjid ala Halaman Login */
+.logo-icon-box {
   width: 45px;
   height: 45px;
+  background: linear-gradient(135deg, #1e6eb5, #3b82f6);
+  color: #ffffff;
   border-radius: 12px;
-  object-fit: cover;
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  box-shadow: 0 4px 12px rgba(30, 110, 181, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 .brand-text {
@@ -229,11 +236,9 @@ a { text-decoration: none; }
   animation: fadeInDown 0.8s ease;
 }
 
-.badge-logo {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  object-fit: cover;
+.badge-logo-icon {
+  font-size: 1.1rem;
+  color: #f6d365;
 }
 
 .hero-title {
@@ -314,7 +319,7 @@ a { text-decoration: none; }
 }
 .sec-h span { color: var(--primary); }
 
-/* ===== SALDO CARD UTAMA & KOTAK GABUNGAN (DISAMAKAN PERSIS) ===== */
+/* ===== SALDO CARD UTAMA & KOTAK GABUNGAN ===== */
 .saldo-card-pub, .mstat-card-combined {
   background: linear-gradient(135deg, #1e6eb5, #4ca1e0);
   border-radius: 20px; padding: 30px; color: #fff;
@@ -426,7 +431,9 @@ a { text-decoration: none; }
 <nav class="navbar-custom">
   <div class="navbar-content"> 
     <a href="<?= APP_URL ?>/index.php" class="navbar-brand">
-      <img src="<?= APP_URL ?>/assets/img/masjid.jpg" alt="Logo" class="img-logo">
+      <div class="logo-icon-box">
+        <i class="fas fa-mosque"></i>
+      </div>
       <div class="brand-text">
         <span class="title">Sistem Informasi</span>
         <span class="subtitle">Kas Masjid Baeturrohman</span>
@@ -450,7 +457,7 @@ a { text-decoration: none; }
   <div class="container hero-content">
     
     <div class="hero-badge-pub">
-        <img src="<?= APP_URL ?>/assets/img/masjid.jpg" alt="Logo" class="badge-logo"> Masjid Baeturrohman
+        <i class="fas fa-mosque badge-logo-icon"></i> Masjid Baeturrohman
     </div>
     <h1 class="hero-title">
         Transparansi Keuangan<br><span>Kas Masjid</span> untuk Jamaah
@@ -486,7 +493,7 @@ a { text-decoration: none; }
     </div>
 
     <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:25px;align-items:stretch" class="g2">
-      <!-- Saldo Card Utama (Teks "Saldo Kas Masjid" disingkat menjadi "Saldo") -->
+      <!-- Saldo Card Utama -->
       <div class="saldo-card-pub animate-fadeIn">
         <div style="position:relative;z-index:1">
           <div style="display:flex;align-items:center;gap:15px;margin-bottom:20px">
@@ -510,7 +517,7 @@ a { text-decoration: none; }
         </div>
       </div>
 
-      <!-- Kotak Gabungan Statistik Kanan (Diselaraskan persis dengan Kotak Saldo Kiri) -->
+      <!-- Kotak Gabungan Statistik Kanan -->
       <div class="mstat-card-combined animate-fadeIn">
         <?php
         $stats = [
@@ -656,20 +663,39 @@ Chart.defaults.plugins.tooltip.padding = 14;
 Chart.defaults.plugins.tooltip.cornerRadius = 8;
 const fmtRp = v => 'Rp ' + new Intl.NumberFormat('id-ID').format(v);
 
-// 1. Bar Chart (Pemasukan: Biru #1e6eb5, Pengeluaran: Merah #ef4444)
+// Fungsi untuk mendeteksi layar HP secara dinamis
+const isMobileScreen = () => window.innerWidth <= 768;
+
+// Konfigurasi Sumbu Y: Menyembunyikan angka di samping secara total (display: false) agar bersih
+const getAxisConfig = () => ({
+  grid: { color: 'rgba(0,0,0,.05)' },
+  ticks: { display: false }
+});
+
+// 1. Bar Chart (Pemasukan vs Pengeluaran)
 new Chart(document.getElementById('barChart').getContext('2d'),{
   type:'bar',
   data:{labels:<?=json_encode($chart_labels)?>,datasets:[
     {label:'Pemasukan',data:<?=json_encode($chart_masuk)?>,backgroundColor:'#1e6eb5',borderRadius:6},
     {label:'Pengeluaran',data:<?=json_encode($chart_keluar)?>,backgroundColor:'#ef4444',borderRadius:6}
   ]},
-  options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-    plugins:{legend:{position:'bottom',labels:{padding:20,usePointStyle:true}},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmtRp(c.raw)}`}}},
-    scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{callback:v=>fmtRp(v)}}},
-    animation:{duration:1000,easing:'easeOutQuart'}}
+  options:{
+    responsive:true,
+    maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{position:'bottom',labels:{padding:20,usePointStyle:true}},
+      tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmtRp(c.raw)}`}}
+    },
+    scales:{
+      x:{ grid:{display:false}, ticks:{ maxRotation: 0, autoSkip: false } },
+      y: getAxisConfig()
+    },
+    animation:{duration:1000,easing:'easeOutQuart'}
+  }
 });
 
-// 2. Line Chart 12 Bulan (Pemasukan: Biru, Pengeluaran: Merah)
+// 2. Line Chart 12 Bulan (Pemasukan & Pengeluaran)
 new Chart(document.getElementById('lineChart').getContext('2d'),{
   type:'line',
   data:{
@@ -710,7 +736,10 @@ new Chart(document.getElementById('lineChart').getContext('2d'),{
       legend:{display:true, position:'bottom', labels:{padding:20, usePointStyle:true}},
       tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmtRp(c.raw)}`}}
     },
-    scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{callback:v=>fmtRp(v)}}},
+    scales:{
+      x:{ grid:{display:false}, ticks:{ maxRotation: 0, autoSkip: true, maxTicksLimit: isMobileScreen() ? 6 : 12 } },
+      y: getAxisConfig()
+    },
     animation:{duration:1000}
   }
 });
@@ -796,11 +825,7 @@ function togglePause(){
   if(paused){
     clearTimeout(timer);
     const w=getComputedStyle(spBar).width;
-    spBar.style.transition='none';
-    spBar.style.width=w;
-    spBar.style.opacity='0.4';
   } else {
-    spBar.style.opacity='1';
     startAuto();
     resetProg();
   }
