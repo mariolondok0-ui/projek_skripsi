@@ -2,6 +2,9 @@
 require_once '../includes/config.php';
 requireLogin();
 
+$admin_id = (int)$_SESSION['admin_id'];
+$admin    = $conn->query("SELECT * FROM users WHERE id=$admin_id")->fetch_assoc();
+
 // Fungsi Helper Tanggal Indonesia
 function tgl_indo_kat($tanggal) {
     if (empty($tanggal) || $tanggal == '0000-00-00') return '-';
@@ -179,6 +182,12 @@ $jml_keluar = $conn->query("SELECT COUNT(*) as c FROM kategori WHERE jenis='kelu
     gap: 10px;
 }
 
+/* KODE TAMBAHAN UNTUK FOTO PROFIL DI NAVBAR */
+.t-avatar { width: 32px; height: 32px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; overflow: hidden; }
+.t-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.d-avatar { width: 45px; height: 45px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; overflow: hidden; }
+.d-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
 @media(max-width: 768px) {
     .admin-main { width: 100% !important; margin-left: 0 !important; }
     .admin-content { padding: 15px !important; }
@@ -217,16 +226,28 @@ $jml_keluar = $conn->query("SELECT COUNT(*) as c FROM kategori WHERE jenis='kelu
       <!-- DROPDOWN PROFIL USER -->
       <div class="user-dropdown-wrapper" id="userDropdownWrap">
         <div class="topbar-user" id="userDropdownTrigger">
-          <div class="t-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
-          <div class="t-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
+          <div class="t-avatar">
+            <?php if (!empty($admin['foto_profil']) && file_exists('../assets/uploads/' . $admin['foto_profil'])): ?>
+                <img src="<?= APP_URL ?>/assets/uploads/<?= htmlspecialchars($admin['foto_profil']) ?>" alt="Avatar">
+            <?php else: ?>
+                <?= strtoupper(substr($admin['nama'], 0, 1)) ?>
+            <?php endif; ?>
+          </div>
+          <div class="t-name"><?= htmlspecialchars($admin['nama']) ?></div>
           <i class="fas fa-chevron-down"></i>
         </div>
         
         <div class="user-dropdown-menu">
           <div class="dropdown-header">
-            <div class="d-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
+            <div class="d-avatar">
+              <?php if (!empty($admin['foto_profil']) && file_exists('../assets/uploads/' . $admin['foto_profil'])): ?>
+                  <img src="<?= APP_URL ?>/assets/uploads/<?= htmlspecialchars($admin['foto_profil']) ?>" alt="Avatar">
+              <?php else: ?>
+                  <?= strtoupper(substr($admin['nama'], 0, 1)) ?>
+              <?php endif; ?>
+            </div>
             <div class="d-info">
-              <div class="d-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
+              <div class="d-name"><?= htmlspecialchars($admin['nama']) ?></div>
               <div class="d-role">@admin</div>
             </div>
           </div>

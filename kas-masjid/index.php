@@ -201,7 +201,7 @@ a { text-decoration: none; }
   box-shadow: 0 6px 15px rgba(30, 110, 181, 0.4);
 }
 
-/* ===== HERO SECTION ===== */
+/* ===== HERO SECTION (FIXED BACKGROUND PATH) ===== */
 .hero-section {
   min-height: 100svh;
   display: flex;
@@ -209,7 +209,7 @@ a { text-decoration: none; }
   position: relative;
   padding: 120px 0 60px;
   background: linear-gradient(135deg, rgba(10,31,53,0.85) 0%, rgba(30,110,181,0.75) 60%, rgba(91,163,217,0.65) 100%), 
-              url('<?= APP_URL ?>/assets/img/masjid.jpg') center center / cover no-repeat;
+              url('assets/img/masjid.jpg') center center / cover no-repeat;
 }
 
 .hero-content {
@@ -441,8 +441,8 @@ a { text-decoration: none; }
     </a>
     
     <?php if (isLoggedIn()): ?>
-        <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn-admin-nav">
-          <i class="fa-solid fa-arrow-left-long"></i> <span>Kembali</span>
+        <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn-admin-nav"> <span>Kembali</span>
+          <i class="fa-solid fa-arrow-right-long"></i>
         </a>
     <?php else: ?>
         <a href="<?= APP_URL ?>/login.php" class="btn-login-nav">

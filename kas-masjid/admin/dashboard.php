@@ -1,6 +1,14 @@
 <?php
 require_once '../includes/config.php';
-requireLogin();
+
+// Proteksi halaman admin: Jika belum login, lempar ke halaman login
+if (!isLoggedIn()) {
+    header("Location: ../login.php");
+    exit;
+}
+
+$admin_id = (int)$_SESSION['admin_id'];
+$admin    = $conn->query("SELECT * FROM users WHERE id=$admin_id")->fetch_assoc();
 
 function tgl_indo($tanggal){
     $bulan = array (
@@ -11,7 +19,7 @@ function tgl_indo($tanggal){
     return $pecahkan[2] . ' ' . $bulan[ (int)$pecahkan[1] ] . ' ' . $pecahkan[0];
 }
 
-// Stat cards[cite: 2, 3]
+// Stat cards
 $total_masuk  = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='masuk' AND deleted_at IS NULL")->fetch_assoc()['t'];
 $total_keluar = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='keluar' AND deleted_at IS NULL")->fetch_assoc()['t'];
 $saldo        = $total_masuk - $total_keluar;
@@ -22,7 +30,7 @@ $masuk_bln    = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM tr
 $keluar_bln   = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='keluar' AND deleted_at IS NULL AND DATE_FORMAT(tanggal,'%Y-%m')='$bln'")->fetch_assoc()['t'];
 $trx_bln      = (int)$conn->query("SELECT COUNT(*) as t FROM transaksi WHERE deleted_at IS NULL AND DATE_FORMAT(tanggal,'%Y-%m')='$bln'")->fetch_assoc()['t'];
 
-// Bar chart 6 bulan[cite: 2, 3]
+// Bar chart 6 bulan
 $chart_labels = $chart_masuk = $chart_keluar = [];
 $nama_bulan_singkat = [1=>'Jan', 2=>'Feb', 3=>'Mar', 4=>'Apr', 5=>'Mei', 6=>'Jun', 7=>'Jul', 8=>'Agt', 9=>'Sep', 10=>'Okt', 11=>'Nov', 12=>'Des'];
 
@@ -35,7 +43,7 @@ for ($i = 5; $i >= 0; $i--) {
     $chart_keluar[] = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM transaksi WHERE jenis='keluar' AND deleted_at IS NULL AND DATE_FORMAT(tanggal,'%Y-%m')='$b'")->fetch_assoc()['t'];
 }
 
-// Line chart 12 bulan (Trend Pemasukan & Pengeluaran)[cite: 2, 3]
+// Line chart 12 bulan
 $line_labels = $line_masuk = $line_keluar = [];
 for ($m = 1; $m <= 12; $m++) {
     $b  = sprintf('%04d-%02d', $tahun, $m);
@@ -47,11 +55,11 @@ for ($m = 1; $m <= 12; $m++) {
     $line_keluar[] = $kl;
 }
 
-// Data Donat Gabungan (Pemasukan vs Pengeluaran)[cite: 2, 3]
+// Data Donat Gabungan
 $pie_combined_labels = ['Total Pemasukan', 'Total Pengeluaran'];
 $pie_combined_data   = [$total_masuk, $total_keluar];
 
-// Transaksi terbaru[cite: 2, 3]
+// Transaksi terbaru
 $trx_recent = $conn->query("SELECT t.*, k.nama_kategori FROM transaksi t JOIN kategori k ON t.kategori_id=k.id WHERE t.deleted_at IS NULL ORDER BY t.tanggal DESC, t.id DESC LIMIT 6");
 
 $alert = getAlert();
@@ -62,9 +70,8 @@ $alert = getAlert();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Dashboard – <?= APP_NAME ?></title>
-<link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=<?= time() ?>">
+<link rel="stylesheet" href="../assets/css/style.css?v=<?= time() ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<!-- FONT MODERN: INTER -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
@@ -90,7 +97,7 @@ body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color
 a { text-decoration: none; }
 button, input, select, textarea { font-family: inherit; }
 
-/* LAYOUT */
+/* LAYOUT ADMIN */
 .admin-wrapper { display: flex; min-height: 100vh; overflow-x: hidden; }
 .admin-main { flex: 1; display: flex; flex-direction: column; width: calc(100% - 260px); }
 .admin-content { padding: 30px; flex: 1; max-width: 1300px; width: 100%; margin: 0 auto; }
@@ -112,7 +119,8 @@ button, input, select, textarea { font-family: inherit; }
     display: flex; align-items: center; gap: 10px; 
 }
 .topbar-user:hover { background: rgba(0,0,0,0.04); }
-.t-avatar { width: 32px; height: 32px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; }
+.t-avatar { width: 32px; height: 32px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; overflow: hidden; }
+.t-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .t-name { font-weight: 600; font-size: 0.9rem; color: var(--text-main); }
 .topbar-user i.fa-chevron-down { font-size: 0.7rem; color: var(--text-muted); transition: transform 0.3s; }
 .user-dropdown-wrapper.active .topbar-user i.fa-chevron-down { transform: rotate(180deg); }
@@ -126,7 +134,8 @@ button, input, select, textarea { font-family: inherit; }
 .user-dropdown-wrapper.active .user-dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
 
 .dropdown-header { padding: 18px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid var(--border-color); background: #f8fafc; border-radius: 16px 16px 0 0; }
-.d-avatar { width: 45px; height: 45px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; }
+.d-avatar { width: 45px; height: 45px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; overflow: hidden; }
+.d-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .d-info { flex: 1; overflow: hidden; }
 .d-name { font-weight: 700; color: var(--text-main); font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .d-role { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; font-weight: 500;}
@@ -141,12 +150,7 @@ button, input, select, textarea { font-family: inherit; }
 .dropdown-item.text-danger i { color: var(--danger); }
 .dropdown-item.text-danger:hover { background: #fef2f2; color: var(--danger); padding-left: 25px; }
 
-/* PAGE HEADER */
-.page-header { margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
-.page-title { font-size: 1.35rem; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
-.page-subtitle { color: var(--text-muted); font-size: 0.85rem; }
-
-/* 4 KOTAK STATISTIK: 2 DI KIRI, 2 DI KANAN SAAT DI HP */
+/* 4 KOTAK STATISTIK */
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
 .stat-card {
   background: var(--bg-card); padding: 18px 20px; border-radius: var(--radius-lg); 
@@ -227,12 +231,10 @@ button, input, select, textarea { font-family: inherit; }
 .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
 .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
 
-/* RESPONSIVE */
-@media (max-width: 1024px) {
-  .banner-stats { justify-content: space-around; width: 100%; }
-}
+/* RESPONSIF HP YANG DISEMPURNAKAN */
 @media (max-width: 768px) {
-  /* TAMPILAN HP: 4 KOTAK STATISTIK 2 KIRI 2 KANAN */
+  html, body { overflow-x: hidden !important; max-width: 100vw !important; }
+  .admin-wrapper { display: block !important; width: 100% !important; }
   .grid-4 { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; margin-bottom: 16px !important; }
   .stat-card { padding: 12px 10px !important; gap: 10px !important; }
   .stat-icon-wrap { width: 34px !important; height: 34px !important; font-size: 0.9rem !important; border-radius: 8px !important; }
@@ -240,52 +242,48 @@ button, input, select, textarea { font-family: inherit; }
   .stat-value { font-size: 0.95rem !important; }
   .stat-sub { font-size: 0.6rem !important; }
 
-  /* TAMPILAN HP: BANNER BULAN INI & KARTU GRAFIK BERSEBELAHAN (2 KOLOM PADAT) */
   .dashboard-top-row {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 10px !important;
-    align-items: stretch !important;
-    margin-bottom: 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    margin-bottom: 16px !important;
   }
-  .dashboard-top-row > div {
-    margin-bottom: 0 !important;
-    padding: 12px 10px !important;
-    border-radius: 12px !important;
-  }
-  
+
+  /* Perbaikan total banner agar rapi dan tidak bertumpuk di HP */
   .banner-card {
     flex-direction: column !important;
     align-items: flex-start !important;
-    text-align: left !important;
-    justify-content: flex-start !important;
-    gap: 12px !important;
+    gap: 14px !important;
+    padding: 16px 18px !important;
+    border-radius: var(--radius-lg) !important;
   }
-  .banner-left h4 { font-size: 0.6rem !important; margin-bottom: 2px !important; }
-  .banner-left h2 { font-size: 0.8rem !important; line-height: 1.2 !important; }
-  .banner-stats {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 6px !important;
-    width: 100% !important;
-  }
-  .banner-sep { display: none !important; }
-  .b-stat-item { text-align: left !important; }
-  .b-stat-item .v { font-size: 0.8rem !important; font-weight: 700 !important; }
-  .b-stat-item .l { font-size: 0.55rem !important; margin-top: 1px !important; }
-
-  .card-modern .card-header-modern { margin-bottom: 8px !important; padding-bottom: 6px !important; }
-  .card-modern .card-header-modern h3 { font-size: 0.75rem !important; gap: 4px !important; }
-  .slide-title-box { font-size: 0.6rem !important; padding: 3px 6px !important; }
-  .slide-counter { font-size: 0.6rem !important; padding: 2px 5px !important; }
+  .banner-left h4 { font-size: 0.68rem !important; margin-bottom: 2px !important; }
+  .banner-left h2 { font-size: 1rem !important; }
   
-  .admin-main { width: 100%; margin-left: 0; }
-  .admin-content { padding: 15px; }
-  .topbar { padding: 0 15px; }
-  .t-name, .topbar-date, .fa-chevron-down { display: none; }
-}
-@media (max-width: 480px) {
-  .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .banner-stats {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 4px !important;
+    background: rgba(255, 255, 255, 0.12);
+    padding: 10px 12px;
+    border-radius: 10px;
+  }
+  .banner-sep { display: block !important; width: 1px; height: 24px; background: rgba(255,255,255,0.3); }
+  .b-stat-item { text-align: center !important; flex: 1; }
+  .b-stat-item .v { font-size: 0.82rem !important; font-weight: 800 !important; white-space: nowrap; }
+  .b-stat-item .l { font-size: 0.58rem !important; }
+
+  .card-modern { padding: 16px !important; }
+  .card-modern .card-header-modern { margin-bottom: 10px !important; padding-bottom: 8px !important; }
+  .card-modern .card-header-modern h3 { font-size: 0.85rem !important; }
+  
+  .admin-main { width: 100% !important; margin-left: 0 !important; }
+  .admin-content { padding: 15px !important; }
+  .topbar { padding: 0 15px !important; }
+  .t-name, .topbar-date, .fa-chevron-down { display: none !important; }
 }
 </style>
 </head>
@@ -310,16 +308,28 @@ button, input, select, textarea { font-family: inherit; }
         <!-- DROPDOWN PROFIL USER -->
         <div class="user-dropdown-wrapper" id="userDropdownWrap">
           <div class="topbar-user" id="userDropdownTrigger">
-            <div class="t-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
-            <div class="t-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
+            <div class="t-avatar">
+              <?php if (!empty($admin['foto_profil']) && file_exists('../assets/uploads/' . $admin['foto_profil'])): ?>
+                  <img src="<?= APP_URL ?>/assets/uploads/<?= htmlspecialchars($admin['foto_profil']) ?>" alt="Avatar">
+              <?php else: ?>
+                  <?= strtoupper(substr($admin['nama'], 0, 1)) ?>
+              <?php endif; ?>
+            </div>
+            <div class="t-name"><?= htmlspecialchars($admin['nama']) ?></div>
             <i class="fas fa-chevron-down"></i>
           </div>
           
           <div class="user-dropdown-menu">
             <div class="dropdown-header">
-              <div class="d-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
+              <div class="d-avatar">
+                <?php if (!empty($admin['foto_profil']) && file_exists('../assets/uploads/' . $admin['foto_profil'])): ?>
+                    <img src="<?= APP_URL ?>/assets/uploads/<?= htmlspecialchars($admin['foto_profil']) ?>" alt="Avatar">
+                <?php else: ?>
+                    <?= strtoupper(substr($admin['nama'], 0, 1)) ?>
+                <?php endif; ?>
+              </div>
               <div class="d-info">
-                <div class="d-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
+                <div class="d-name"><?= htmlspecialchars($admin['nama']) ?></div>
                 <div class="d-role">@admin</div>
               </div>
             </div>
@@ -327,7 +337,7 @@ button, input, select, textarea { font-family: inherit; }
               <a href="profil.php" class="dropdown-item">
                 <i class="fas fa-user-cog"></i> Pengaturan Akun
               </a>
-              <a href="#" class="dropdown-item text-danger" onclick="openLogoutModal()">
+              <a href="#" onclick="openLogoutModal(); return false;" class="dropdown-item text-danger">
                 <i class="fas fa-sign-out-alt"></i> Logout
               </a>
             </div>
@@ -347,14 +357,7 @@ button, input, select, textarea { font-family: inherit; }
       </div>
       <?php endif; ?>
 
-      <!-- PAGE HEADER -->
-      <div class="page-header">
-        <div>
-          <p class="page-subtitle">Ringkasan kas Masjid Baeturrohman – <?= tgl_indo(date('Y-m-d')) ?></p>
-        </div>
-      </div>
-
-      <!-- 4 STAT CARDS (2 KIRI, 2 KANAN DI HP) -->
+      <!-- 4 STAT CARDS -->
       <div class="grid-4">
         <div class="stat-card c-saldo">
           <div class="stat-icon-wrap"><i class="fas fa-wallet"></i></div>
@@ -390,7 +393,7 @@ button, input, select, textarea { font-family: inherit; }
         </div>
       </div>
 
-      <!-- KELOMPOK ROW ATAS (BANNER BULAN INI & GRAFIK BERSEBELAHAN DI HP) -->
+      <!-- KELOMPOK ROW ATAS (BANNER & GRAFIK) -->
       <div class="dashboard-top-row">
         <!-- BANNER RINGKASAN BULAN INI -->
         <div class="banner-card">
@@ -416,7 +419,7 @@ button, input, select, textarea { font-family: inherit; }
           </div>
         </div>
 
-        <!-- GRAFIK SLIDESHOW (3 SLIDE SAJA) -->
+        <!-- GRAFIK SLIDESHOW -->
         <div class="card-modern">
           <div class="card-header-modern">
             <h3><i class="fas fa-chart-area"></i> Visualisasi Keuangan</h3>
@@ -431,17 +434,17 @@ button, input, select, textarea { font-family: inherit; }
             <div class="slide-counter" id="slideCounter">1 / 3</div>
           </div>
 
-          <!-- Slide 1: Bar Chart 6 Bulan -->
+          <!-- Slide 1 -->
           <div class="grafik-slide active" id="slide-0">
             <div style="position:relative; height:240px; width:100%;"><canvas id="barChart"></canvas></div>
           </div>
 
-          <!-- Slide 2: Line Chart 12 Bulan -->
+          <!-- Slide 2 -->
           <div class="grafik-slide" id="slide-1">
             <div style="position:relative; height:240px; width:100%;"><canvas id="lineChart"></canvas></div>
           </div>
 
-          <!-- Slide 3: Doughnut Chart Gabungan (Pemasukan vs Pengeluaran) -->
+          <!-- Slide 3 -->
           <div class="grafik-slide" id="slide-2">
             <?php if ($total_masuk > 0 || $total_keluar > 0): ?>
               <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:20px; width:100%;">
@@ -511,7 +514,6 @@ button, input, select, textarea { font-family: inherit; }
 </div>
 
 <script>
-// Logic Dropdown User
 const userDropdownWrap = document.getElementById('userDropdownWrap');
 const userDropdownTrigger = document.getElementById('userDropdownTrigger');
 
@@ -528,7 +530,6 @@ if (userDropdownTrigger && userDropdownWrap) {
     });
 }
 
-// Logic Toggle Sidebar
 const sidebarToggle = document.getElementById('sidebarToggle');
 const sidebar = document.getElementById('adminSidebar') || document.querySelector('.sidebar');
 const overlay = document.getElementById('sidebarOverlay');
@@ -546,14 +547,6 @@ if (sidebarToggle) {
     });
 }
 
-if (overlay) {
-    overlay.addEventListener('click', function() {
-        if (sidebar) sidebar.classList.remove('open');
-        overlay.classList.remove('active');
-    });
-}
-
-// Chart Configurations
 Chart.defaults.font.family = "'Inter', sans-serif";
 Chart.defaults.font.size = 11;
 Chart.defaults.color = '#64748b';
@@ -561,15 +554,11 @@ Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15,23,42,0.9)';
 Chart.defaults.plugins.tooltip.padding = 10;
 Chart.defaults.plugins.tooltip.cornerRadius = 6;
 
-const fmtRp = v => 'Rp ' + new Intl.NumberFormat('id-ID').format(v);
-
-// Konfigurasi Sumbu Y: Menyembunyikan angka di samping secara total (display: false) agar bersih dan minimalis
 const getAxisConfig = () => ({
   grid: { color: '#f1f5f9' },
   ticks: { display: false }
 });
 
-// 1. Bar Chart (Pemasukan vs Pengeluaran)
 new Chart(document.getElementById('barChart').getContext('2d'), {
   type:'bar',
   data:{labels:<?= json_encode($chart_labels) ?>,datasets:[
@@ -590,7 +579,6 @@ new Chart(document.getElementById('barChart').getContext('2d'), {
   }
 });
 
-// 2. Line Chart (Trend 12 Bulan)
 new Chart(document.getElementById('lineChart').getContext('2d'), {
   type:'line',
   data:{
@@ -640,11 +628,9 @@ new Chart(document.getElementById('lineChart').getContext('2d'), {
   }
 });
 
-// 3. Doughnut Chart Proporsi Keuangan
 const pieLabels = <?= json_encode($pie_combined_labels) ?>;
 const pieData   = <?= json_encode($pie_combined_data) ?>;
 const pieColors = ['#1e6eb5', '#ef4444'];
-
 const fmtRpFull = v => 'Rp ' + new Intl.NumberFormat('id-ID').format(v);
 
 if (document.getElementById('pieCombined')) {
@@ -679,7 +665,6 @@ if (document.getElementById('pieCombined')) {
   });
 }
 
-// Slideshow Logic (3 Slide)
 const DURATION = 10000;
 const slides = document.querySelectorAll('.grafik-slide'), dots = document.querySelectorAll('.sdot'), progress = document.getElementById('slideProgress');
 const SLIDE_INFO = [

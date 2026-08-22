@@ -2,6 +2,9 @@
 require_once '../includes/config.php';
 requireLogin();
 
+$admin_id = (int)$_SESSION['admin_id'];
+$admin    = $conn->query("SELECT * FROM users WHERE id=$admin_id")->fetch_assoc();
+
 // Fungsi Helper Bulan & Tanggal Indonesia
 function formatBulanIndoPub($bulan_angka) {
     $bulan = [
@@ -37,13 +40,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         setAlert('danger', 'Semua field wajib diisi dengan benar.');
     } else {
         if ($id > 0) {
-            $stmt = $conn->prepare("UPDATE transaksi SET tanggal=?,keterangan=?,jumlah=?,kategori_id=? WHERE id=? AND jenis='masuk'");
+            $stmt = $conn->prepare("UPDATE transaksi SET tanggal=?, keterangan=?, jumlah=?, kategori_id=? WHERE id=? AND jenis='masuk'");
             $stmt->bind_param('ssdii', $tanggal, $keterangan, $jumlah, $kategori_id, $id);
             $stmt->execute();
             setAlert('success', 'Data kas masuk berhasil diperbarui.');
         } else {
             $jenis = 'masuk';
-            $stmt = $conn->prepare("INSERT INTO transaksi (tanggal,keterangan,jumlah,jenis,kategori_id,user_id) VALUES (?,?,?,?,?,?)");
+            $stmt = $conn->prepare("INSERT INTO transaksi (tanggal, keterangan, jumlah, jenis, kategori_id, user_id) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->bind_param('ssdsii', $tanggal, $keterangan, $jumlah, $jenis, $kategori_id, $user_id);
             $stmt->execute();
             setAlert('success', 'Data kas masuk berhasil ditambahkan.');
@@ -52,11 +55,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect(APP_URL . '/admin/kas-masuk.php');
 }
 
-// ---- Handle DELETE → Soft Delete ke Tempat Sampah ----
+// ---- Handle DELETE → Soft Delete / Hard Delete ----
 if (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
-    $conn->query("UPDATE transaksi SET deleted_at=NOW() WHERE id=$id AND jenis='masuk' AND deleted_at IS NULL");
-    setAlert('success', 'Data dipindahkan ke <a href="'.APP_URL.'/admin/tempat-sampah.php" style="color:inherit;font-weight:700;text-decoration:underline">Tempat Sampah</a>. Bisa dipulihkan kapan saja.');
+    $type = $_GET['type'] ?? 'soft';
+
+    if ($type === 'hard') {
+        $conn->query("DELETE FROM transaksi WHERE id=$id AND jenis='masuk'");
+        setAlert('success', 'Data kas masuk berhasil dihapus permanen.');
+    } else {
+        $conn->query("UPDATE transaksi SET deleted_at=NOW() WHERE id=$id AND jenis='masuk' AND deleted_at IS NULL");
+        // Menggunakan string HTML aman agar tidak rusak saat dicetak
+        $sampah_link = APP_URL . '/admin/tempat-sampah.php';
+        setAlert('success', 'Data dipindahkan ke <a href="' . $sampah_link . '" style="color:inherit;font-weight:700;text-decoration:underline">Tempat Sampah</a>. Bisa dipulihkan kapan saja.');
+    }
     redirect(APP_URL . '/admin/kas-masuk.php');
 }
 
@@ -64,10 +76,11 @@ if (isset($_GET['delete'])) {
 $kategori_list = $conn->query("SELECT * FROM kategori WHERE jenis='masuk' ORDER BY nama_kategori");
 
 // ---- Filter ----
-$default_filter = '2026-08';
+$default_filter = date('Y-m'); 
 $filter_bulan = sanitize($_GET['bulan'] ?? $default_filter);
 $f_year = (int)substr($filter_bulan, 0, 4);
-if ($f_year < 2026 || $f_year > 2027) {
+
+if ($f_year < 2024 || $f_year > 2030) {
     $filter_bulan = $default_filter;
 }
 
@@ -86,7 +99,6 @@ $summary = $conn->query("SELECT COALESCE(SUM(jumlah),0) as total, COUNT(*) as cn
 
 $alert = getAlert();
 
-// Format label tombol filter aktif
 $parts_f = explode('-', $filter_bulan);
 $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIndoPub($parts_f[1]) . ' ' . $parts_f[0] : 'Pilih Bulan';
 ?>
@@ -99,12 +111,8 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
 <title>Kas Masuk - <?= APP_NAME ?></title>
 <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=<?= time() ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<!-- FONT MODERN: Plus Jakarta Sans -->
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* =======================================================
-   STYLING MODAL & MOBILE RESPONSIVE PERBAIKAN
-   ======================================================= */
 .modern-modal-overlay {
   position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(4px); z-index: 9999;
@@ -161,7 +169,6 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
 }
 .modern-modal-body .input-icon { color: #94a3b8; }
 
-/* TOMBOL BATAL DI KIRI & AKSI DI KANAN */
 .modern-modal-footer {
     display: flex; justify-content: space-between; align-items: center; gap: 12px;
     margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9; flex-shrink: 0;
@@ -220,6 +227,11 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
   gap: 12px;
 }
 
+.t-avatar { width: 32px; height: 32px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; overflow: hidden; }
+.t-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.d-avatar { width: 45px; height: 45px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; overflow: hidden; }
+.d-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
 @media(max-width: 640px) {
   .page-header-flex {
     flex-direction: column !important;
@@ -265,7 +277,6 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
     padding: 16px !important;
   }
   
-  /* Perbaikan Card List Mobile */
   .trx-m-item {
     display: flex !important;
     flex-direction: column !important;
@@ -293,7 +304,6 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
     margin-top: 4px;
   }
 
-  /* Perbaikan Modal Hapus di HP agar tidak meluber */
   #deleteModal .modal {
     width: 92% !important;
     max-width: 100% !important;
@@ -339,16 +349,28 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
       <!-- DROPDOWN PROFIL USER -->
       <div class="user-dropdown-wrapper" id="userDropdownWrap">
         <div class="topbar-user" id="userDropdownTrigger">
-          <div class="t-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
-          <div class="t-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
+          <div class="t-avatar">
+            <?php if (!empty($admin['foto_profil']) && file_exists('../assets/uploads/' . $admin['foto_profil'])): ?>
+                <img src="<?= APP_URL ?>/assets/uploads/<?= htmlspecialchars($admin['foto_profil']) ?>" alt="Avatar">
+            <?php else: ?>
+                <?= strtoupper(substr($admin['nama'], 0, 1)) ?>
+            <?php endif; ?>
+          </div>
+          <div class="t-name"><?= htmlspecialchars($admin['nama']) ?></div>
           <i class="fas fa-chevron-down"></i>
         </div>
         
         <div class="user-dropdown-menu">
           <div class="dropdown-header">
-            <div class="d-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
+            <div class="d-avatar">
+              <?php if (!empty($admin['foto_profil']) && file_exists('../assets/uploads/' . $admin['foto_profil'])): ?>
+                  <img src="<?= APP_URL ?>/assets/uploads/<?= htmlspecialchars($admin['foto_profil']) ?>" alt="Avatar">
+              <?php else: ?>
+                  <?= strtoupper(substr($admin['nama'], 0, 1)) ?>
+              <?php endif; ?>
+            </div>
             <div class="d-info">
-              <div class="d-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
+              <div class="d-name"><?= htmlspecialchars($admin['nama']) ?></div>
               <div class="d-role">@admin</div>
             </div>
           </div>
@@ -356,9 +378,9 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
             <a href="profil.php" class="dropdown-item">
               <i class="fas fa-user-cog"></i> Pengaturan Akun
             </a>
-            <a href="#" class="dropdown-item text-danger" onclick="openLogoutModal()">
-              <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
+            <a href="#" onclick="openLogoutModal(); return false;" class="dropdown-item text-danger">
+  <i class="fas fa-sign-out-alt"></i> Logout
+</a>
           </div>
         </div>
       </div>
@@ -370,13 +392,14 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
     <?php if ($alert): ?>
     <div class="alert alert-<?= $alert['type'] ?>">
       <i class="fas fa-<?= $alert['type']=='success'?'check-circle':'exclamation-circle' ?>"></i>
-      <?= htmlspecialchars($alert['message']) ?>
+      <!-- Dirender menggunakan echo langsung agar tag <a> pada pesan hapus berfungsi benar -->
+      <span><?= $alert['message'] ?></span>
     </div>
     <?php endif; ?>
     
     <div class="page-header">
       <div class="page-header-flex">
-                <div>
+            <div>
           <button onclick="openTambahModal()" class="btn btn-primary" style="border:none; display:inline-flex; align-items:center; gap:8px;">
             <i class="fas fa-plus-circle"></i> Tambah Data
           </button>
@@ -645,8 +668,8 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
         <?php 
         $curr_f_y = (int)substr($filter_bulan, 0, 4);
         $curr_f_m = (int)substr($filter_bulan, 5, 2);
-        if ($curr_f_y < 2026 || $curr_f_y > 2027) {
-            $curr_f_y = 2026;
+        if ($curr_f_y < 2024 || $curr_f_y > 2030) {
+            $curr_f_y = (int)date('Y');
         }
         $list_Bulan_Modal = [
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 
@@ -666,8 +689,9 @@ $label_filter_aktif = (isset($parts_f[0]) && isset($parts_f[1])) ? formatBulanIn
         <div class="form-group mb-3" style="margin-bottom:20px;">
           <label class="form-label">Tahun</label>
           <select name="filter_y" id="modalSelectTahun" class="form-control form-select" style="background:#f8fafc;">
-            <option value="2026" <?= $curr_f_y == 2026 ? 'selected' : '' ?>>2026</option>
-            <option value="2027" <?= $curr_f_y == 2027 ? 'selected' : '' ?>>2027</option>
+            <?php for($y = 2025; $y <= 2030; $y++): ?>
+                <option value="<?= $y ?>" <?= $curr_f_y == $y ? 'selected' : '' ?>><?= $y ?></option>
+            <?php endfor; ?>
           </select>
         </div>
 
@@ -797,19 +821,23 @@ document.getElementById('deleteModal').addEventListener('click', function(e){
 const sidebar = document.getElementById('adminSidebar');
 const overlay = document.getElementById('sidebarOverlay');
 
-document.getElementById('sidebarToggle').addEventListener('click', () => {
-  if (window.innerWidth <= 768) {
-    sidebar.classList.toggle('open');
-    overlay.classList.toggle('active');
-  } else {
-    document.querySelector('.admin-wrapper').classList.toggle('toggled');
-  }
-});
+if (document.getElementById('sidebarToggle')) {
+    document.getElementById('sidebarToggle').addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        if(sidebar) sidebar.classList.toggle('open');
+        if(overlay) overlay.classList.toggle('active');
+      } else {
+        document.querySelector('.admin-wrapper').classList.toggle('toggled');
+      }
+    });
+}
 
-overlay.addEventListener('click',()=>{
-  sidebar.classList.remove('open');
-  overlay.classList.remove('active');
-});
+if (overlay) {
+    overlay.addEventListener('click',()=>{
+      if(sidebar) sidebar.classList.remove('open');
+      overlay.classList.remove('active');
+    });
+}
 </script>
 </body>
 </html>

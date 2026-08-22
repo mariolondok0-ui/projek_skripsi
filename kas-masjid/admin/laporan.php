@@ -2,32 +2,33 @@
 require_once '../includes/config.php';
 requireLogin();
 
+$admin_id = (int)$_SESSION['admin_id'];
+$admin    = $conn->query("SELECT * FROM users WHERE id=$admin_id")->fetch_assoc();
+
 // Fungsi Helper Format Bulan Indonesia
-function formatBulanIndo($bulan_angka) {
-    $bulan = [
+function formatBulanIndo($bulan_angka) {$bulan = [
         1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
         'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
     ];
     return $bulan[(int)$bulan_angka] ?? '';
 }
 
-function formatTanggalIndo($tanggal) {
-    $bulan = [
+function formatTanggalIndo($tanggal) {$bulan = [
         1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
         'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
     ];
     $pecah = explode('-', date('Y-m-d', strtotime($tanggal)));
-    return $pecah[2] . ' ' . $bulan[(int)$pecah[1]] . ' ' . $pecah[0];
+    return $pecah[2] . ' ' .$bulan[(int)$pecah[1]] . ' ' .$pecah[0];
 }
 
 // Filter
 $filter_periode = $_GET['periode'] ?? 'semua';
 $filter_jenis   = $_GET['jenis']   ?? 'semua';
 
-// Pemisahan Bulan dan Tahun dari Input Select
+// Pemisahan Bulan dan Tahun dari Input Select (Real-time)
 $filter_bln_num = sprintf('%02d', (int)($_GET['bln_num'] ?? date('m')));
 $filter_thn_num = (int)($_GET['thn_num'] ?? date('Y'));
-$filter_bulan   = $_GET['bulan'] ?? ($filter_thn_num . '-' . $filter_bln_num);
+$filter_bulan   = $filter_thn_num . '-' . $filter_bln_num;
 
 $filter_tahun   = (int)($_GET['tahun']  ?? date('Y'));
 $tgl_dari       = $_GET['dari']    ?? date('Y-m-01');
@@ -48,14 +49,11 @@ switch ($filter_periode) {
     case 'custom': 
         $where[] = "t.tanggal BETWEEN '" . sanitize($tgl_dari) . "' AND '" . sanitize($tgl_sampai) . "'"; 
         break;
-    case 'hari':   
-        $where[] = "t.tanggal = CURDATE()"; 
-        break;
     case 'minggu': 
         $where[] = "t.tanggal >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"; 
         break;
 }
-$where_sql = implode(' AND ', $where);
+$where_sql = implode(' AND ',$where);
 
 // Data
 $rows = $conn->query("
@@ -80,7 +78,6 @@ $sum = $conn->query("
 $periode_label = match($filter_periode) {
     'bulan'  => formatBulanIndo($filter_bln_num) . ' ' . $filter_thn_num,
     'tahun'  => 'Tahun ' . $filter_tahun,
-    'hari'   => 'Hari Ini, ' . formatTanggalIndo(date('Y-m-d')),
     'minggu' => '7 Hari Terakhir',
     'custom' => formatTanggalIndo($tgl_dari) . ' s/d ' . formatTanggalIndo($tgl_sampai),
     default  => 'Semua Periode',
@@ -105,11 +102,11 @@ if (isset($_GET['print'])):
   body { font-family: 'Times New Roman', Times, serif; font-size: 13px; color: #000; background: #e8f0f8; -webkit-font-smoothing: antialiased; }
   
   .control-bar { 
-      position: fixed; top: 0; left: 0; right: 0; 
-      background: #fff; padding: 15px 30px; 
-      display: flex; justify-content: space-between; align-items: center; 
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08); z-index: 1000; 
-      font-family: 'Segoe UI', Arial, sans-serif;
+    position: fixed; top: 0; left: 0; right: 0; 
+    background: #fff; padding: 15px 30px; 
+    display: flex; justify-content: space-between; align-items: center; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08); z-index: 1000; 
+    font-family: 'Segoe UI', Arial, sans-serif;
   }
   .control-bar-left { display: flex; gap: 10px; }
   .control-bar-right { display: flex; gap: 12px; align-items: center; }
@@ -123,27 +120,27 @@ if (isset($_GET['print'])):
 
   .dropdown { position: relative; display: inline-block; }
   .dropdown-content {
-      display: none; position: absolute; right: 0; top: 100%;
-      background-color: #fff; min-width: 180px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: 1001;
-      border-radius: 8px; overflow: hidden; margin-top: 8px;
-      border: 1px solid #ddd;
+    display: none; position: absolute; right: 0; top: 100%;
+    background-color: #fff; min-width: 180px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: 1001;
+    border-radius: 8px; overflow: hidden; margin-top: 8px;
+    border: 1px solid #ddd;
   }
   .dropdown-content.show { display: block; }
   .dropdown-content a {
-      color: #333; padding: 12px 16px; text-decoration: none; display: flex; align-items: center; gap: 10px;
-      font-size: 12px; font-weight: 600; border-bottom: 1px solid #f5f5f5;
+    color: #333; padding: 12px 16px; text-decoration: none; display: flex; align-items: center; gap: 10px;
+    font-size: 12px; font-weight: 600; border-bottom: 1px solid #f5f5f5;
   }
   .dropdown-content a:hover { background-color: #f1f1f1; color: #000; }
 
   .print-wrapper { margin-top: 90px; padding-bottom: 40px; }
   .print-container { 
-      background: #fff; 
-      width: 210mm; 
-      min-height: 297mm; 
-      margin: 0 auto; 
-      padding: 15mm 20mm; 
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+    background: #fff; 
+    width: 210mm; 
+    min-height: 297mm; 
+    margin: 0 auto; 
+    padding: 15mm 20mm; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
   }
   
   .header { display: flex; align-items: center; border-bottom: 3px double #000; padding-bottom: 12px; margin-bottom: 18px; }
@@ -155,11 +152,6 @@ if (isset($_GET['print'])):
   
   .sub-header { text-align: center; margin-bottom: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #000; letter-spacing: 0.5px; }
 
-  .summary { display: flex; gap: 10px; margin-bottom: 22px; }
-  .sum-box { flex: 1; border: 1px solid #000; border-top: 3px solid #000; border-radius: 6px; padding: 10px 8px; text-align: center; background: #fff; }
-  .sum-box .label { font-size: 9.5px; text-transform: uppercase; font-weight: bold; color: #000; letter-spacing: 0.3px; }
-  .sum-box .value { font-size: 12.5px; font-weight: bold; margin-top: 5px; color: #000; }
-  
   table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
   thead th { background: #000; color: #fff; padding: 8px 10px; font-size: 11.5px; text-transform: uppercase; border: 1px solid #000; font-weight: bold; letter-spacing: 0.3px; }
   tbody td { padding: 7px 10px; border: 1px solid #000; font-size: 12px; vertical-align: middle; color: #000; }
@@ -170,7 +162,7 @@ if (isset($_GET['print'])):
   .text-left { text-align: left; }
   .text-right { text-align: right; }
   
-  .footer-print { margin-top: 35px; display: flex; justify-content: space-between; font-size: 12px; page-break-inside: avoid; color: #000; }
+  .footer-print { margin-top: 35px; display: flex; justify-content: flex-end; font-size: 12px; page-break-inside: avoid; color: #000; }
   .ttd { text-align: center; width: 210px; }
   .ttd .space { height: 60px; }
   .ttd strong { border-bottom: 1px solid #000; padding-bottom: 1px; display: inline-block; width: 100%; font-weight: bold; }
@@ -240,25 +232,6 @@ if (isset($_GET['print'])):
           <?php if ($filter_jenis !== 'semua'): ?> &bull; JENIS: <?= strtoupper($filter_jenis) ?><?php endif; ?>
         </div>
         
-        <div class="summary">
-          <div class="sum-box">
-            <div class="label">Total Pemasukan</div>
-            <div class="value"><?= formatRupiah($sum['total_masuk']) ?></div>
-          </div>
-          <div class="sum-box">
-            <div class="label">Total Pengeluaran</div>
-            <div class="value"><?= formatRupiah($sum['total_keluar']) ?></div>
-          </div>
-          <div class="sum-box">
-            <div class="label">Saldo / Selisih</div>
-            <div class="value"><?= formatRupiah($sum['total_masuk'] - $sum['total_keluar']) ?></div>
-          </div>
-          <div class="sum-box">
-            <div class="label">Total Transaksi</div>
-            <div class="value"><?= $sum['total_trx'] ?></div>
-          </div>
-        </div>
-        
         <table>
           <thead>
             <tr>
@@ -305,15 +278,24 @@ if (isset($_GET['print'])):
             </tr>
             <tr>
                 <td colspan="5" class="text-right">Saldo Akhir:</td>
-                <td class="text-right"><?= formatRupiah($sum['total_masuk']-$sum['total_keluar']) ?></td>
+                <td class="text-right">
+                  <?php 
+                    $selisih_print = $sum['total_masuk'] - $sum['total_keluar'];
+                    if ($selisih_print < 0) {
+                        echo '(Rp ' . number_format(abs($selisih_print), 0, ',', '.') . ')';
+                    } else {
+                        echo 'Rp ' . number_format($selisih_print, 0, ',', '.');
+                    }
+                  ?>
+                </td>
             </tr>
           </tfoot>
         </table>
         
         <div class="footer-print">
-          <div>Dicetak pada: <?= formatTanggalIndo(date('Y-m-d')) ?>, <?= date('H:i') ?> WIB</div>
           <div class="ttd">
-            <div>Bendahara Masjid,</div>
+            <div>Garut, <?= formatTanggalIndo(date('Y-m-d')) ?></div>
+            <div style="margin-top: 4px;">Bendahara Masjid,</div>
             <div class="space"></div>
             <strong></strong>
           </div>
@@ -457,29 +439,70 @@ endif;
 }
 .btn-modal-simpan:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 6px 8px -1px rgba(30,110,181,0.4); }
 
+/* PERBAIKAN RESPONSIF TABEL DI HP (AGAR TIDAK TERPOTONG) */
 .table-wrapper {
-    display: block !important;
     width: 100% !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     border-radius: 12px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 20px;
 }
+.table-wrapper table {
+    width: 100% !important;
+    min-width: 650px !important; /* Pas di layar HP tanpa meluber berlebihan */
+    border-collapse: collapse !important;
+}
+
+/* KARTU SUMMARY RESPONSIF & RATA TENGAH SEMPURNA */
+.summary-container { display: flex; align-items: center; justify-content: center !important; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.summary-cards-wrapper { display: flex; gap: 12px; flex-wrap: wrap; width: 100%; justify-content: center !important; }
+.summary-bar-item {
+  background: var(--bg-card); padding: 12px 18px; border-radius: var(--radius);
+  box-shadow: var(--shadow-sm); display: flex; align-items: center !important; gap: 12px; flex: 1; min-width: 220px;
+}
+
+.t-avatar { width: 32px; height: 32px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; overflow: hidden; }
+.t-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.d-avatar { width: 45px; height: 45px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; overflow: hidden; }
+.d-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.laporan-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+@media(max-width: 640px) {
+  .summary-container { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; }
+  .summary-cards-wrapper { flex-direction: column !important; width: 100% !important; align-items: center !important; }
+  .summary-bar-item { width: 100% !important; align-items: center !important; justify-content: center !important; text-align: center !important; }
+
+  .laporan-action-row {
+    flex-direction: row !important;
+    gap: 8px !important;
+  }
+  .laporan-action-row .btn {
+    flex: 1 !important;
+    justify-content: center !important;
+    padding: 10px 12px !important;
+    font-size: 0.8rem !important;
+    white-space: nowrap !important;
+  }
+}
+
 @media (max-width: 768px) {
     html, body { overflow-x: hidden !important; max-width: 100vw !important; }
     .admin-wrapper { display: block !important; width: 100% !important; overflow-x: hidden !important; }
     .admin-main { width: 100% !important; margin-left: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
     .admin-content { width: 100% !important; padding: 12px !important; box-sizing: border-box !important; margin: 0 !important; }
-    .topbar { width: 100% !important; box-sizing: border-box !important; padding: 12px 15px !important; }
-    .t-name { display: none !important; }
-    .page-header > div { flex-direction: column !important; align-items: stretch !important; gap: 15px !important; text-align: center; }
-    .page-title { font-size: 1.35rem !important; margin-bottom: 4px !important; }
-    .page-subtitle { font-size: 0.85rem !important; margin-bottom: 5px !important; }
-    .grid-4 { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; width: 100% !important; }
-    .stat-card { padding: 15px 12px !important; border-radius: 12px !important; width: auto !important; margin: 0 !important; }
-    .stat-label { font-size: 0.72rem !important; }
-    .stat-value { font-size: 1.05rem !important; margin: 4px 0 !important; }
-    .table-wrapper table { min-width: 800px !important; }
-    .table th, .table td { padding: 10px 8px !important; font-size: 0.85rem !important; }
+    .topbar { width: 100% !important; box-sizing: border-box !important; padding: 0 12px !important; }
+    .t-name, .topbar-date, .fa-chevron-down { display: none !important; }
+    .table th, .table td { padding: 10px 8px !important; font-size: 0.8rem !important; }
 }
 </style>
 </head>
@@ -488,8 +511,8 @@ endif;
 <?php include '../includes/partials/sidebar-admin.php'; ?>
 <div class="admin-main">
   <div class="topbar">
-    <div class="topbar-left">
-      <div class="topbar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div id="sidebarToggle" style="cursor:pointer; font-size:1.1rem; color:var(--text-muted);"><i class="fas fa-bars"></i></div>
       <div class="breadcrumb">
         <span class="bc-item"><i class="fas fa-home"></i></span>
         <span class="bc-sep"><i class="fas fa-chevron-right"></i></span>
@@ -502,16 +525,28 @@ endif;
       <!-- DROPDOWN PROFIL USER -->
       <div class="user-dropdown-wrapper" id="userDropdownWrap">
         <div class="topbar-user" id="userDropdownTrigger">
-          <div class="t-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
-          <div class="t-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
+          <div class="t-avatar">
+            <?php if (!empty($admin['foto_profil']) && file_exists('../assets/uploads/' . $admin['foto_profil'])): ?>
+                <img src="<?= APP_URL ?>/assets/uploads/<?= htmlspecialchars($admin['foto_profil']) ?>" alt="Avatar">
+            <?php else: ?>
+                <?= strtoupper(substr($admin['nama'], 0, 1)) ?>
+            <?php endif; ?>
+          </div>
+          <div class="t-name"><?= htmlspecialchars($admin['nama']) ?></div>
           <i class="fas fa-chevron-down"></i>
         </div>
         
         <div class="user-dropdown-menu">
           <div class="dropdown-header">
-            <div class="d-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
+            <div class="d-avatar">
+              <?php if (!empty($admin['foto_profil']) && file_exists('../assets/uploads/' . $admin['foto_profil'])): ?>
+                  <img src="<?= APP_URL ?>/assets/uploads/<?= htmlspecialchars($admin['foto_profil']) ?>" alt="Avatar">
+              <?php else: ?>
+                  <?= strtoupper(substr($admin['nama'], 0, 1)) ?>
+              <?php endif; ?>
+            </div>
             <div class="d-info">
-              <div class="d-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
+              <div class="d-name"><?= htmlspecialchars($admin['nama']) ?></div>
               <div class="d-role">@admin</div>
             </div>
           </div>
@@ -519,9 +554,9 @@ endif;
             <a href="profil.php" class="dropdown-item">
               <i class="fas fa-user-cog"></i> Pengaturan Akun
             </a>
-            <a href="#" class="dropdown-item text-danger" onclick="openLogoutModal()">
-              <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
+            <a href="#" onclick="openLogoutModal(); return false;" class="dropdown-item text-danger">
+  <i class="fas fa-sign-out-alt"></i> Logout
+</a>
           </div>
         </div>
       </div>
@@ -534,20 +569,16 @@ endif;
     <div class="alert alert-<?= $alert['type'] ?>"><i class="fas fa-check-circle"></i> <?= htmlspecialchars($alert['message']) ?></div>
     <?php endif; ?>
     
-    <div class="page-header" style="position: relative;">
-      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+    <div class="page-header" style="position: relative; margin-bottom: 14px;">
+      <div class="laporan-action-row">
+        <!-- TOMBOL POP-UP FILTER LAPORAN -->
+        <button type="button" class="btn" onclick="openFilterModal()" style="background:#ffffff; color:var(--text-primary); border:1px solid #cbd5e1; box-shadow:0 1px 2px rgba(0,0,0,0.05); display:inline-flex; align-items:center; gap:8px;">
+          <i class="fas fa-filter" style="color:var(--primary);"></i> Filter Laporan
+        </button>
         
-
-        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; width:100%;">
-          <!-- TOMBOL POP-UP FILTER LAPORAN -->
-          <button type="button" class="btn" onclick="openFilterModal()" style="background:#ffffff; color:var(--text-primary); border:1px solid #cbd5e1; box-shadow:0 1px 2px rgba(0,0,0,0.05); display:inline-flex; align-items:center; gap:8px;">
-            <i class="fas fa-filter" style="color:var(--primary);"></i> Filter Laporan
-          </button>
-          
-          <a href="?<?= http_build_query(array_merge($_GET,['print'=>1])) ?>" target="_blank" class="btn" style="background-color: #d4af37; color: white; border: none;">
-            <i class="fas fa-print"></i> Cetak / Ekspor PDF
-          </a>
-        </div>
+        <a href="?<?= http_build_query(array_merge($_GET,['print'=>1])) ?>" target="_blank" class="btn" style="background-color: #d4af37; color: white; border: none; display:inline-flex; align-items:center; gap:8px;">
+          <i class="fas fa-print"></i> Cetak / Ekspor PDF
+        </a>
       </div>
     </div>
 
@@ -561,33 +592,41 @@ endif;
       </span>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="grid-4 mb-3">
-      <div class="stat-card green animate-fadeIn">
-        <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
-        <div class="stat-label">Total Pemasukan</div>
-        <div class="stat-value"><?= formatRupiah($sum['total_masuk']) ?></div>
-      </div>
-      <div class="stat-card red animate-fadeIn delay-1">
-        <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
-        <div class="stat-label">Total Pengeluaran</div>
-        <div class="stat-value"><?= formatRupiah($sum['total_keluar']) ?></div>
-      </div>
-      <div class="stat-card gold animate-fadeIn delay-2">
-        <div class="stat-icon"><i class="fas fa-wallet"></i></div>
-        <div class="stat-label">Saldo Periode</div>
-        <div class="stat-value <?= ($sum['total_masuk']-$sum['total_keluar'])>=0?'text-success':'text-danger' ?>">
-          <?= formatRupiah($sum['total_masuk'] - $sum['total_keluar']) ?>
+    <!-- Summary Cards (Rata Tengah Sempurna) -->
+    <div class="summary-container">
+      <div class="summary-cards-wrapper">
+        <div class="summary-bar-item" style="border-left:3px solid var(--success)">
+          <i class="fas fa-arrow-down" style="color:var(--success);font-size:1.3rem"></i>
+          <div>
+            <div style="font-size:.7rem;color:#0f172a;font-weight:700;">Total Pemasukan</div>
+            <div style="font-weight:800;color:var(--success);font-size:.95rem"><?= formatRupiah($sum['total_masuk']) ?></div>
+          </div>
         </div>
-      </div>
-      <div class="stat-card blue animate-fadeIn delay-3">
-        <div class="stat-icon"><i class="fas fa-list"></i></div>
-        <div class="stat-label">Total Transaksi</div>
-        <div class="stat-value"><?= number_format($sum['total_trx']) ?></div>
+        <div class="summary-bar-item" style="border-left:3px solid var(--danger)">
+          <i class="fas fa-arrow-up" style="color:var(--danger);font-size:1.3rem"></i>
+          <div>
+            <div style="font-size:.7rem;color:#0f172a;font-weight:700;">Total Pengeluaran</div>
+            <div style="font-weight:800;color:var(--danger);font-size:.95rem"><?= formatRupiah($sum['total_keluar']) ?></div>
+          </div>
+        </div>
+        <div class="summary-bar-item" style="border-left:3px solid var(--info)">
+          <i class="fas fa-wallet" style="color:var(--info);font-size:1.3rem"></i>
+          <div>
+            <div style="font-size:.7rem;color:#0f172a;font-weight:700;">Saldo Periode</div>
+            <div style="font-weight:800;color:var(--info);font-size:.95rem"><?= formatRupiah($sum['total_masuk'] - $sum['total_keluar']) ?></div>
+          </div>
+        </div>
+        <div class="summary-bar-item" style="border-left:3px solid #64748b">
+          <i class="fas fa-list" style="color:#64748b;font-size:1.3rem"></i>
+          <div>
+            <div style="font-size:.7rem;color:#0f172a;font-weight:700;">Total Transaksi</div>
+            <div style="font-weight:800;color:#64748b;font-size:.95rem"><?= number_format($sum['total_trx']) ?> transaksi</div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Tabel Bersih -->
+    <!-- Tabel Bersih & Responsif -->
     <div class="table-wrapper animate-fadeIn">
       <table class="table table-striped" id="laporanTable">
         <thead>
@@ -661,14 +700,13 @@ endif;
           <label class="form-label">Pilih Periode Laporan</label>
           <select name="periode" id="modalSelectPeriode" class="form-control form-select" onchange="togglePeriodeInputs(this.value)">
             <option value="semua"  <?= $filter_periode=='semua'?'selected':'' ?>>Semua Periode</option>
-            <option value="hari"   <?= $filter_periode=='hari'?'selected':'' ?>>Hari Ini</option>
             <option value="minggu" <?= $filter_periode=='minggu'?'selected':'' ?>>7 Hari Terakhir</option>
             <option value="bulan"  <?= $filter_periode=='bulan'?'selected':'' ?>>Per Bulan</option>
             <option value="tahun"  <?= $filter_periode=='tahun'?'selected':'' ?>>Per Tahun</option>
           </select>
         </div>
 
-        <!-- INPUT DUA SELECT UNTUK BULAN & TAHUN BAHASA INDONESIA -->
+        <!-- INPUT DUA SELECT UNTUK BULAN & TAHUN REALTIME -->
         <div class="form-group mb-3" id="inputBulanBox" style="display: <?= $filter_periode=='bulan'?'block':'none' ?>;">
           <label class="form-label">Pilih Bulan & Tahun</label>
           <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px;">
@@ -681,33 +719,21 @@ endif;
               <?php endfor; ?>
             </select>
             <select name="thn_num" class="form-control form-select">
-              <?php for ($y=date('Y'); $y>=2020; $y--): ?>
+              <?php for ($y=2027; $y>=2026; $y--): ?>
                 <option value="<?= $y ?>" <?= $filter_thn_num==$y?'selected':'' ?>><?= $y ?></option>
               <?php endfor; ?>
             </select>
           </div>
         </div>
 
+        <!-- INPUT TAHUN REALTIME -->
         <div class="form-group mb-3" id="inputTahunBox" style="display: <?= $filter_periode=='tahun'?'block':'none' ?>;">
           <label class="form-label">Pilih Tahun</label>
           <select name="tahun" class="form-control form-select">
-            <?php for ($y=date('Y'); $y>=2020; $y--): ?>
+            <?php for ($y=2027; $y>=2026; $y--): ?>
               <option value="<?= $y ?>" <?= $filter_tahun==$y?'selected':'' ?>><?= $y ?></option>
             <?php endfor; ?>
           </select>
-        </div>
-
-        <div id="inputCustomBox" style="display: <?= $filter_periode=='custom'?'block':'none' ?>;" class="mb-3">
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-            <div>
-              <label class="form-label">Dari Tanggal</label>
-              <input type="date" name="dari" value="<?= $tgl_dari ?>" class="form-control">
-            </div>
-            <div>
-              <label class="form-label">Sampai Tanggal</label>
-              <input type="date" name="sampai" value="<?= $tgl_sampai ?>" class="form-control">
-            </div>
-          </div>
         </div>
 
         <!-- PILIHAN JENIS KAS -->
@@ -765,7 +791,6 @@ document.getElementById('filterModal').addEventListener('click', function(e) {
 function togglePeriodeInputs(val) {
   document.getElementById('inputBulanBox').style.display  = (val === 'bulan')  ? 'block' : 'none';
   document.getElementById('inputTahunBox').style.display  = (val === 'tahun')  ? 'block' : 'none';
-  document.getElementById('inputCustomBox').style.display = (val === 'custom') ? 'block' : 'none';
 }
 
 // Sidebar toggle

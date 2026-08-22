@@ -2,6 +2,9 @@
 require_once '../includes/config.php';
 requireLogin();
 
+$admin_id = (int)$_SESSION['admin_id'];
+$admin    = $conn->query("SELECT * FROM users WHERE id=$admin_id")->fetch_assoc();
+
 // Fungsi Helper Format Tanggal Indonesia
 function formatTanggalIndo($tanggal, $dengan_waktu = false) {
     if (empty($tanggal) || $tanggal == '0000-00-00' || $tanggal == '0000-00-00 00:00:00') {
@@ -191,7 +194,7 @@ select.form-select {
     transition: all 0.2s ease;
 }
 
-/* STAT CARDS */
+/* STAT CARDS (DIUBAH AGAR RATA TENGAH SEMPURNA SEPERTI KAS KELUAR) */
 .trash-stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -203,7 +206,7 @@ select.form-select {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
-    justify-content: center !important;
+    justify-content: flex-start !important;
     text-align: left !important;
     padding: 20px 20px !important;
     gap: 14px !important;
@@ -253,6 +256,12 @@ select.form-select {
     max-width: 100% !important;
 }
 
+/* KODE TAMBAHAN UNTUK FOTO PROFIL DI NAVBAR */
+.t-avatar { width: 32px; height: 32px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; overflow: hidden; }
+.t-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.d-avatar { width: 45px; height: 45px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; overflow: hidden; }
+.d-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
 @media (max-width: 768px) {
     html, body { overflow-x: hidden !important; max-width: 100vw !important; }
     .admin-wrapper { display: block !important; width: 100% !important; overflow-x: hidden !important; }
@@ -266,6 +275,7 @@ select.form-select {
         flex-direction: column !important;
         gap: 12px !important;
         width: 100% !important;
+        align-items: center !important;
     }
     .trash-stats-grid > div {
         width: 100% !important;
@@ -277,6 +287,13 @@ select.form-select {
         margin: 0 !important; 
         box-sizing: border-box !important; 
         justify-content: center !important; 
+        text-align: center !important;
+    }
+    .stat-card .stat-card-inner {
+        justify-content: center !important;
+    }
+    .stat-card-content {
+        align-items: center !important;
     }
     
     .info-banner {
@@ -315,21 +332,33 @@ select.form-select {
       </div>
     </div>
     <div class="topbar-right">
-      <div class="topbar-date"><i class="fas fa-calendar-alt me-1" style="margin-right: 4px;"></i> <?= formatTanggalIndo(date('Y-m-d')) ?>[cite: 2]</div>
+      <div class="topbar-date"><i class="fas fa-calendar-alt me-1" style="margin-right: 4px;"></i> <?= formatTanggalIndo(date('Y-m-d')) ?></div>
       
       <!-- DROPDOWN PROFIL USER -->
       <div class="user-dropdown-wrapper" id="userDropdownWrap">
         <div class="topbar-user" id="userDropdownTrigger">
-          <div class="t-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
-          <div class="t-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
+          <div class="t-avatar">
+            <?php if (!empty($admin['foto_profil']) && file_exists('../assets/uploads/' . $admin['foto_profil'])): ?>
+                <img src="<?= APP_URL ?>/assets/uploads/<?= htmlspecialchars($admin['foto_profil']) ?>" alt="Avatar">
+            <?php else: ?>
+                <?= strtoupper(substr($admin['nama'], 0, 1)) ?>
+            <?php endif; ?>
+          </div>
+          <div class="t-name"><?= htmlspecialchars($admin['nama']) ?></div>
           <i class="fas fa-chevron-down"></i>
         </div>
         
         <div class="user-dropdown-menu">
           <div class="dropdown-header">
-            <div class="d-avatar"><?= strtoupper(substr($_SESSION['admin_nama'],0,1)) ?></div>
+            <div class="d-avatar">
+              <?php if (!empty($admin['foto_profil']) && file_exists('../assets/uploads/' . $admin['foto_profil'])): ?>
+                  <img src="<?= APP_URL ?>/assets/uploads/<?= htmlspecialchars($admin['foto_profil']) ?>" alt="Avatar">
+              <?php else: ?>
+                  <?= strtoupper(substr($admin['nama'], 0, 1)) ?>
+              <?php endif; ?>
+            </div>
             <div class="d-info">
-              <div class="d-name"><?= htmlspecialchars($_SESSION['admin_nama']) ?></div>
+              <div class="d-name"><?= htmlspecialchars($admin['nama']) ?></div>
               <div class="d-role">@admin</div>
             </div>
           </div>
@@ -337,9 +366,9 @@ select.form-select {
             <a href="profil.php" class="dropdown-item">
               <i class="fas fa-user-cog"></i> Pengaturan Akun
             </a>
-            <a href="#" class="dropdown-item text-danger" onclick="openLogoutModal()">
-              <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
+            <a href="#" onclick="openLogoutModal(); return false;" class="dropdown-item text-danger">
+  <i class="fas fa-sign-out-alt"></i> Logout
+</a>
           </div>
         </div>
       </div>
@@ -455,7 +484,7 @@ select.form-select {
           <tr style="opacity:.85">
             <td class="text-muted"><?= $no++ ?></td>
             <!-- Menggunakan Format Tanggal Indonesia -->
-            <td style="white-space:nowrap;"><?= formatTanggalIndo($r['tanggal']) ?>[cite: 2]</td>
+            <td style="white-space:nowrap;"><?= formatTanggalIndo($r['tanggal']) ?></td>
             <td>
               <span style="text-decoration:line-through;color:var(--text-muted)">
                 <?= htmlspecialchars($r['keterangan']) ?>
@@ -474,7 +503,7 @@ select.form-select {
             <!-- Menggunakan Format Tanggal Indonesia dengan Waktu -->
             <td style="font-size:.78rem;color:var(--text-muted);white-space:nowrap;">
               <i class="fas fa-clock"></i>
-              <?= formatTanggalIndo($r['deleted_at'], true) ?>[cite: 2]
+              <?= formatTanggalIndo($r['deleted_at'], true) ?>
             </td>
             <td>
               <div style="display:flex;gap:6px;justify-content:center">

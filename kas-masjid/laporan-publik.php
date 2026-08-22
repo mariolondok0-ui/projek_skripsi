@@ -1,5 +1,23 @@
 <?php
 require_once 'includes/config.php';
+
+// Helper Format Tanggal & Bulan Indonesia
+function tgl_indo_pub($tanggal, $dengan_waktu = false) {
+    if (empty($tanggal) || $tanggal == '0000-00-00') return '-';
+    $bulan = [
+        1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    $ts = strtotime($tanggal);
+    $tgl = date('d', $ts);
+    $bln = $bulan[(int)date('m', $ts)];
+    $thn = date('Y', $ts);
+    if ($dengan_waktu) {
+        return "$tgl $bln $thn " . date('H:i', $ts);
+    }
+    return "$tgl $bln $thn";
+}
+
 $filter_periode = $_GET['periode'] ?? 'semua';
 $filter_jenis   = $_GET['jenis']   ?? 'semua';
 $filter_bulan   = $_GET['bulan']   ?? date('Y-m');
@@ -92,11 +110,28 @@ $saldo_total = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM tra
 .trx-card .trx-meta { font-size: .75rem; color: var(--text-muted); margin-top: 2px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .trx-card .trx-amount { font-size: 1rem; font-weight: 800; text-align: right; flex-shrink: 0; }
 
-/* Responsive */
+/* Responsive khusus HP */
 @media (max-width: 768px) {
   .stat-cards-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
-  .saldo-banner { flex-direction: column; text-align: center; padding: 16px; }
-  .saldo-banner .sb-icon { margin: 0 auto; }
+  .saldo-banner { 
+    flex-direction: row !important; 
+    align-items: center !important; 
+    justify-content: space-between !important; 
+    padding: 14px 16px !important; 
+    gap: 12px !important;
+  }
+  .saldo-banner .sb-icon { 
+    width: 42px !important; 
+    height: 42px !important; 
+    font-size: 1.1rem !important;
+    margin: 0 !important; 
+  }
+  .saldo-banner .sb-val { 
+    font-size: 1.25rem !important; 
+  }
+  .saldo-banner .sb-lbl { 
+    font-size: 0.7rem !important; 
+  }
   .lap-header { padding: 28px 0 20px; }
   .table-wrapper { display: none; }
   .trx-list-mobile { display: flex; flex-direction: column; gap: 10px; }
@@ -115,13 +150,8 @@ $saldo_total = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM tra
 
 <!-- ===== HEADER ===== -->
 <div class="lap-header">
-  <div class="container">
-    <a href="<?= APP_URL ?>/index.php"
-       style="display:inline-flex;align-items:center;gap:7px;color:rgba(255,255,255,.75);font-size:.82rem;font-weight:500;transition:color .15s;text-decoration:none"
-       onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.75)'">
-      <i class="fas fa-arrow-left"></i> Kembali
-    </a>
-    <div style="margin-top:14px">
+  <div class="container" style="padding-top: 30px;">
+    <div style="margin-top:0">
       <div style="display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.15);color:rgba(255,255,255,.9);padding:5px 14px;border-radius:99px;font-size:.78rem;font-weight:600;border:1px solid rgba(255,255,255,.2)">
         <i class="fas fa-file-alt"></i> Laporan Keuangan Publik
       </div>
@@ -136,13 +166,13 @@ $saldo_total = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM tra
     <!-- Saldo Banner -->
     <div class="saldo-banner">
       <div class="sb-icon"><i class="fas fa-wallet"></i></div>
-      <div style="flex:1">
+      <div style="flex:1; min-width:0;">
         <div class="sb-lbl">Saldo Kas Masjid Saat Ini</div>
         <div class="sb-val"><?= formatRupiah($saldo_total) ?></div>
       </div>
-      <div style="text-align:right;flex-shrink:0">
-        <div style="font-size:.72rem;color:rgba(255,255,255,.6)">Diperbarui</div>
-        <div style="font-size:.8rem;font-weight:600;color:rgba(255,255,255,.9)"><?= date('d M Y') ?></div>
+      <div style="text-align:right; flex-shrink:0;">
+        <div style="font-size:0.65rem; color:rgba(255,255,255,.6)">Diperbarui</div>
+        <div style="font-size:0.75rem; font-weight:600; color:rgba(255,255,255,.9)"><?= tgl_indo_pub(date('Y-m-d')) ?></div>
       </div>
     </div>
   </div>
@@ -232,86 +262,88 @@ $saldo_total = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM tra
     </div>
   </div>
 
-  <!-- ===== TABEL (Desktop) ===== -->
-  <div class="table-wrapper animate-fadeIn">
-    <table class="table table-striped">
-      <thead>
-        <tr><th>#</th><th>Tanggal</th><th>Keterangan</th><th>Kategori</th><th>Jenis</th><th class="text-right">Jumlah (Rp)</th></tr>
-      </thead>
-      <tbody>
-        <?php
-        $rows->data_seek(0);
-        if ($rows->num_rows): $no=$offset+1; while ($r=$rows->fetch_assoc()): ?>
-        <tr>
-          <td class="text-muted"><?= $no++ ?></td>
-          <td style="white-space:nowrap"><?= date('d M Y', strtotime($r['tanggal'])) ?></td>
-          <td><?= htmlspecialchars($r['keterangan']) ?></td>
-          <td><span class="badge badge-primary"><?= htmlspecialchars($r['nama_kategori']) ?></span></td>
-          <td><?= $r['jenis']=='masuk' ? '<span class="badge badge-success"><i class="fas fa-arrow-down"></i> Masuk</span>' : '<span class="badge badge-danger"><i class="fas fa-arrow-up"></i> Keluar</span>' ?></td>
-          <td class="text-right fw-600 <?= $r['jenis']=='masuk'?'text-success':'text-danger' ?>"><?= ($r['jenis']=='masuk'?'+':'-').' '.number_format($r['jumlah'],0,',','.') ?></td>
-        </tr>
-        <?php endwhile; else: ?>
-        <tr><td colspan="6"><div class="empty-state"><div class="es-icon"><i class="fas fa-search"></i></div><h3>Tidak ada data</h3><p>Coba ubah filter pencarian</p></div></td></tr>
-        <?php endif; ?>
-      </tbody>
-      <tfoot>
-        <tr><td colspan="5" class="text-right">Total Pemasukan:</td><td class="text-right text-success fw-600">+ <?= number_format($sum['tm'],0,',','.') ?></td></tr>
-        <tr><td colspan="5" class="text-right">Total Pengeluaran:</td><td class="text-right text-danger fw-600">- <?= number_format($sum['tk'],0,',','.') ?></td></tr>
-        <tr><td colspan="5" class="text-right fw-700">Saldo:</td><td class="text-right fw-700 <?= ($sum['tm']-$sum['tk'])>=0?'text-success':'text-danger' ?>"><?= formatRupiah($sum['tm']-$sum['tk']) ?></td></tr>
-      </tfoot>
-    </table>
-  </div>
+  <?php if ($total_rows > 0): ?>
+    <!-- ===== TABEL (Desktop) ===== -->
+    <div class="table-wrapper animate-fadeIn">
+      <table class="table table-striped">
+        <thead>
+          <tr><th>#</th><th>Tanggal</th><th>Keterangan</th><th>Kategori</th><th>Jenis</th><th class="text-right">Jumlah (Rp)</th></tr>
+        </thead>
+        <tbody>
+          <?php
+          $rows->data_seek(0);
+          $no=$offset+1; while ($r=$rows->fetch_assoc()): ?>
+          <tr>
+            <td class="text-muted"><?= $no++ ?></td>
+            <td style="white-space:nowrap"><?= tgl_indo_pub($r['tanggal']) ?></td>
+            <td><?= htmlspecialchars($r['keterangan']) ?></td>
+            <td><span class="badge badge-primary"><?= htmlspecialchars($r['nama_kategori']) ?></span></td>
+            <td><?= $r['jenis']=='masuk' ? '<span class="badge badge-success"><i class="fas fa-arrow-down"></i> Masuk</span>' : '<span class="badge badge-danger"><i class="fas fa-arrow-up"></i> Keluar</span>' ?></td>
+            <td class="text-right fw-600 <?= $r['jenis']=='masuk'?'text-success':'text-danger' ?>"><?= ($r['jenis']=='masuk'?'+':'-').' '.number_format($r['jumlah'],0,',','.') ?></td>
+          </tr>
+          <?php endwhile; ?>
+        </tbody>
+        <tfoot>
+          <tr><td colspan="5" class="text-right">Total Pemasukan:</td><td class="text-right text-success fw-600">+ <?= number_format($sum['tm'],0,',','.') ?></td></tr>
+          <tr><td colspan="5" class="text-right">Total Pengeluaran:</td><td class="text-right text-danger fw-600">- <?= number_format($sum['tk'],0,',','.') ?></td></tr>
+          <tr><td colspan="5" class="text-right fw-700">Saldo:</td><td class="text-right fw-700 <?= ($sum['tm']-$sum['tk'])>=0?'text-success':'text-danger' ?>"><?= formatRupiah($sum['tm']-$sum['tk']) ?></td></tr>
+        </tfoot>
+      </table>
+    </div>
 
-  <!-- ===== CARD LIST (Mobile) ===== -->
-  <div class="trx-list-mobile">
-    <?php
-    $rows->data_seek(0);
-    if ($rows->num_rows): while ($r=$rows->fetch_assoc()):
-      $isMasuk = $r['jenis'] === 'masuk';
-    ?>
-    <div class="trx-card animate-fadeIn">
-      <div class="trx-icon" style="background:<?= $isMasuk?'rgba(59,130,246,.1)':'rgba(239,68,68,.1)' ?>;color:<?= $isMasuk?'var(--success)':'var(--danger)' ?>">
-        <i class="fas fa-arrow-<?= $isMasuk?'down':'up' ?>"></i>
-      </div>
-      <div class="trx-body">
-        <div class="trx-name"><?= htmlspecialchars($r['keterangan']) ?></div>
-        <div class="trx-meta">
-          <span><i class="fas fa-calendar-alt"></i> <?= date('d M Y', strtotime($r['tanggal'])) ?></span>
-          <span class="badge badge-primary" style="font-size:.68rem"><?= htmlspecialchars($r['nama_kategori']) ?></span>
+    <!-- ===== CARD LIST (Mobile) ===== -->
+    <div class="trx-list-mobile">
+      <?php
+      $rows->data_seek(0);
+      while ($r=$rows->fetch_assoc()):
+        $isMasuk = $r['jenis'] === 'masuk';
+      ?>
+      <div class="trx-card animate-fadeIn">
+        <div class="trx-icon" style="background:<?= $isMasuk?'rgba(59,130,246,.1)':'rgba(239,68,68,.1)' ?>;color:<?= $isMasuk?'var(--success)':'var(--danger)' ?>">
+          <i class="fas fa-arrow-<?= $isMasuk?'down':'up' ?>"></i>
+        </div>
+        <div class="trx-body">
+          <div class="trx-name"><?= htmlspecialchars($r['keterangan']) ?></div>
+          <div class="trx-meta">
+            <span><i class="fas fa-calendar-alt"></i> <?= tgl_indo_pub($r['tanggal']) ?></span>
+            <span class="badge badge-primary" style="font-size:.68rem"><?= htmlspecialchars($r['nama_kategori']) ?></span>
+          </div>
+        </div>
+        <div class="trx-amount <?= $isMasuk?'text-success':'text-danger' ?>">
+          <?= $isMasuk?'+':'-' ?>Rp <?= number_format($r['jumlah'],0,',','.') ?>
         </div>
       </div>
-      <div class="trx-amount <?= $isMasuk?'text-success':'text-danger' ?>">
-        <?= $isMasuk?'+':'-' ?>Rp <?= number_format($r['jumlah'],0,',','.') ?>
-      </div>
-    </div>
-    <?php endwhile; else: ?>
-    <div class="empty-state">
-      <div class="es-icon"><i class="fas fa-search"></i></div>
-      <h3>Tidak ada data</h3>
-      <p>Coba ubah filter pencarian</p>
-    </div>
-    <?php endif; ?>
+      <?php endwhile; ?>
 
-    <!-- Summary Mobile -->
-    <?php if ($rows->num_rows): ?>
-    <div style="background:var(--bg-card);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm);border:1px solid var(--border-light);margin-top:4px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center">
-        <div>
-          <div style="font-size:.7rem;color:var(--text-muted)">Total Masuk</div>
-          <div style="font-size:.95rem;font-weight:800;color:var(--info)">+<?= number_format($sum['tm'],0,',','.') ?></div>
+      <!-- Summary Mobile -->
+      <div style="background:var(--bg-card);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm);border:1px solid var(--border-light);margin-top:4px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center">
+          <div>
+            <div style="font-size:.7rem;color:var(--text-muted)">Total Masuk</div>
+            <div style="font-size:.95rem;font-weight:800;color:var(--info)">+<?= number_format($sum['tm'],0,',','.') ?></div>
+          </div>
+          <div>
+            <div style="font-size:.7rem;color:var(--text-muted)">Total Keluar</div>
+            <div style="font-size:.95rem;font-weight:800;color:var(--danger)">-<?= number_format($sum['tk'],0,',','.') ?></div>
+          </div>
         </div>
-        <div>
-          <div style="font-size:.7rem;color:var(--text-muted)">Total Keluar</div>
-          <div style="font-size:.95rem;font-weight:800;color:var(--danger)">-<?= number_format($sum['tk'],0,',','.') ?></div>
+        <div style="border-top:1px solid var(--border-light);margin-top:12px;padding-top:12px;text-align:center">
+          <div style="font-size:.7rem;color:var(--text-muted)">Saldo Periode</div>
+          <div style="font-size:1.1rem;font-weight:800;<?= ($sum['tm']-$sum['tk'])>=0?'color:var(--info)':'color:var(--danger)' ?>"><?= formatRupiah($sum['tm']-$sum['tk']) ?></div>
         </div>
-      </div>
-      <div style="border-top:1px solid var(--border-light);margin-top:12px;padding-top:12px;text-align:center">
-        <div style="font-size:.7rem;color:var(--text-muted)">Saldo Periode</div>
-        <div style="font-size:1.1rem;font-weight:800;<?= ($sum['tm']-$sum['tk'])>=0?'color:var(--info)':'color:var(--danger)' ?>"><?= formatRupiah($sum['tm']-$sum['tk']) ?></div>
       </div>
     </div>
-    <?php endif; ?>
-  </div>
+
+  <?php else: ?>
+    <!-- Tampilan Kosong (Hanya Muncul Pesan) -->
+    <div style="background: var(--bg-card); border-radius: var(--radius-lg); padding: 50px 20px; text-align: center; border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);">
+      <div style="font-size: 3rem; color: var(--text-muted); opacity: 0.5; margin-bottom: 15px;">
+        <i class="fas fa-search"></i>
+      </div>
+      <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 5px;">Tidak ada data</h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted);">Coba ubah filter pencarian untuk melihat data lainnya.</p>
+    </div>
+  <?php endif; ?>
 
   <!-- Pagination -->
   <?php if ($total_pages > 1): ?>
@@ -336,9 +368,6 @@ $saldo_total = (float)$conn->query("SELECT COALESCE(SUM(jumlah),0) as t FROM tra
 
 <?php include 'includes/partials/footer-publik.php'; ?>
 <script>
-document.getElementById('navToggle').addEventListener('click', () => {
-  document.getElementById('navLinks').classList.toggle('open');
-});
 const obs = new IntersectionObserver(es => es.forEach(e => {
   if (e.isIntersecting) { e.target.style.opacity='1'; e.target.style.transform='translateY(0)'; }
 }), {threshold:.05});
