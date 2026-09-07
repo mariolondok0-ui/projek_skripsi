@@ -435,8 +435,7 @@ a { text-decoration: none; }
         <i class="fas fa-mosque"></i>
       </div>
       <div class="brand-text">
-        <span class="title">Sistem Informasi</span>
-        <span class="subtitle">Kas Masjid Baeturrohman</span>
+        <span class="title">SIKAM</span>
       </div>
     </a>
     
@@ -457,10 +456,10 @@ a { text-decoration: none; }
   <div class="container hero-content">
     
     <div class="hero-badge-pub">
-        <i class="fas fa-mosque badge-logo-icon"></i> Masjid Baeturrohman
+        <i class="fas fa-mosque badge-logo-icon"></i> Masjid Baiturrohman
     </div>
     <h1 class="hero-title">
-        Transparansi Keuangan<br><span>Kas Masjid</span> untuk Jamaah
+        Sistem Informasi<br><span>Keuangan Masjid</span> Baiturrohman
     </h1>
     <p class="hero-desc">
         Pantau pemasukan, pengeluaran, dan saldo kas masjid secara real time. Informasi terbuka dan dapat diakses oleh seluruh jamaah kapan saja.

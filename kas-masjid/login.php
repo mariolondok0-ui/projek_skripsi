@@ -244,7 +244,7 @@ body::after {
   <div class="logo-box">
     <i class="fas fa-mosque"></i>
   </div>
-  <h2 class="login-title">Masjid Baeturrahman</h2>
+  <h2 class="login-title">Masjid Baiturrohman</h2>
   <p class="login-subtitle">Sistem Pengelolaan Kas Masjid</p>
 
   <?php if (!empty($error)): ?>

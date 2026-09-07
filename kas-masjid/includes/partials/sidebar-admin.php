@@ -10,8 +10,7 @@ $admin_init = strtoupper(substr($admin_name, 0, 1));
       <i class="fas fa-mosque" style="color: #ffffff; font-size: 22px;"></i>
     </div>
     <div class="sidebar-brand">
-      <h3>Kas Masjid</h3>
-      <p>Baeturrohman</p>
+      <h3>Sikam</h3>
     </div>
   </div>
 
